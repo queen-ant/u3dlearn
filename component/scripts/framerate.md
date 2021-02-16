@@ -4,7 +4,7 @@
 游戏的帧率不是恒定的，因此 Update 函数调用之间的时间长度也不是恒定的。
 
 举例来说，假设在一项任务中需要逐步向前移动某个对象，一次一帧。起初看起来好像可以在每帧将对象移动一个固定距离：
-```
+```C#
 //C# 脚本示例
 using UnityEngine;
 using System.Collections;
@@ -20,7 +20,7 @@ public class ExampleScript : MonoBehaviour {
 但是，如果帧时间不是恒定的，那么对象看起来会以不规则的速度移动。如果帧时间为 10 毫秒，那么对象将以 distancePerFrame 的距离每秒前进一百次。但如果帧时间增加到 25 毫秒（比如由于 CPU 负载的原因），那么对象每秒只会前进四十次，因此移动的总距离更短。
 
 **解决方案是通过可从 Time.deltaTime 属性读取的帧时间来缩放移动距离大小**：
-```
+```C#
 //C# 脚本示例
 using UnityEngine;
 using System.Collections;
@@ -67,7 +67,7 @@ Unity 有一个 Time Scale 属性可以控制游戏时间相对于实时时间�
 **其他脚本函数不受时间标度的影响，因此您可以在游戏暂停时显示具有正常交互的 GUI**。
 
 Time 窗口有一个属性可用于全局设置时间标度，但使用 Time.timeScale 属性从脚本设置该值通常更有用：
-```
+```C#
 //C# 脚本示例
 using UnityEngine;
 using System.Collections;
@@ -91,7 +91,7 @@ Unity 提供了一个 Capture Framerate 属性可用于解决该问题。
 
 **该属性的值设置为零以外的任何值时，游戏时间将减慢，而帧更新将以精确的定期时间间隔发出。帧之间的时间间隔等于 1.0 / Time.captureFramerate，而与实时和渲染帧所需的时间无关**。因此如果该值设置为 5.0，则每五分之一秒更新一次。随着对帧率的要求有效降低，在 Update 函数中便有了时间保存截屏或采取其他操作：
 
-```
+```C#
 //C# 脚本示例
 using UnityEngine;
 using System.Collections;
