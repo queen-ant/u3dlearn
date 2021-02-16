@@ -74,7 +74,9 @@
 尝试1: 高速移动的弹性碰撞
 =======
 模拟物理过程：https://www.bilibili.com/video/BV1bt41147H5
+
 Hierarchy下有Main Camera、PlaneX、PlaneY
+
 附加Momentum.cs脚本到PlaneX，创建方块。方块使用prefab，collider物理材质Dynamic Friction = 0，Static Friction = 0，Bounciness = 1。
 ```C#
 using System.Collections;
@@ -170,4 +172,5 @@ public class CollideCount : MonoBehaviour
 }
 ```
 **1、因为是直线上的动量守恒，所以要使用Rigidbody.constraints来锁定自由度**
+
 **2、因为存在高速运动，所以要设置为CollisionDetectionMode.ContinuousDynamic进行连续碰撞检测，否则会穿过静态碰撞体。并且要缩短物理系统工作的固定时间步长，以获得准确的结果（此例中默认步长无法获得正确结果）**
