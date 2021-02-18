@@ -386,4 +386,4 @@ public class Gravity : MonoBehaviour
 
 **只要最终的v相同，效果就相同**
 
-**3、Vector3自带的ToString方法默认保留一位小数，但是可以使用精度说明符，new Vector3(1.234f, 5.678f, 9.012f).ToString("F3")，精度受限于float。而直接new Vector3(1.234f, 5.678f, 9.012f).x访问分量可以输出最大精度**
+**3、Vector3自带的ToString方法默认保留一位小数，但是可以使用精度说明符，new Vector3(1.234f, 5.678f, 9.012f).ToString("F3")，精度受限于float。而直接new Vector3(Mathf.PI, 0, 0).x访问分量可以输出最大精度**
