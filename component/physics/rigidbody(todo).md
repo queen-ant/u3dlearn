@@ -374,7 +374,7 @@ public class Gravity : MonoBehaviour
 ### 总结
 **1、isKinematic为true的精度明显比刚体addForce的方式要低，因为Time.deltaTime的原因精确度较差。**
 
-**2、ForceMode的4种模式可以互相转换，动量定理ft=mv，其中f为addForce的向量，t=Time.fixedDeltaTime。
+**2、ForceMode的4种模式可以互相转换，动量定理ft=mv，其中f为addForce的向量，t=Time.fixedDeltaTime。**
 
 - 默认模式ForceMode.Force，v=ft/m
 
