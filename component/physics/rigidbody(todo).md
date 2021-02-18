@@ -231,7 +231,7 @@ public class CollideCount : MonoBehaviour
 =======
 使用了isKinematic为true和false的两种方法模拟引力。初始状态使用 https://arxiv.org/pdf/math/0011268.pdf 中的特殊解，**其中引力常数G为1**。
 
-Hierarchy下创建空gameobject，附加初始化脚本GravityStart.cs，球体prefab阻力设为0，取消重力影响。
+Hierarchy下创建空gameobject，附加初始化脚本GravityStart.cs，球体prefab添加"Planet"的Tag，刚体阻力设为0，取消重力影响。
 ```C#
 using System.Collections;
 using System.Collections.Generic;
