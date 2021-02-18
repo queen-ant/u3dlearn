@@ -112,6 +112,16 @@
 
 <img src="https://docs.unity3d.com/cn/2018.4/uploads/Main/SpeculativeCCD6.png">
 
+使用合适的大小
+-------
+**游戏对象网格的大小比刚体的质量重要得多**。如果发现刚体的行为与预期不符，比如：移动缓慢、漂浮或碰撞方式不正确，请考虑调整网格资源的缩放比例。Unity 的默认单位比例为 1 个单位等于 1 米，因此会维持导入网格的比例并应用于物理计算。例如，摇摇欲坠的摩天大楼在坍塌时与由玩具积木制成的塔楼完全不同，因此不同大小的对象应按照精确比例建模。
+
+**如果要对人类进行建模，请确保该模型在 Unity 中的高度约为 2 米**。要检查对象是否具有适当的大小，请将其与默认立方体进行比较。可以使用 GameObject > 3D Object > Cube 来创建立方体。立方体的高度恰好是 1 米，所以人的高度应该是其两倍。
+
+如果无法调整网格本身，可以更改特定网格资源的统一比例，操作方法是在 Project 视图 __中选择该网格资源，然后从菜单中选择 Assets > Import Settings…__ 。在此处，可以更改比例并重新导入网格。
+
+如果游戏需要在不同比例下实例化游戏对象，则可以调整变换的缩放轴的值。缺点是物理模拟必须在对象实例化时执行更多工作，并且可能导致游戏时性能下降。这倒不是可怕的损失，但此方法不如使用其他两个选项来最终确定比例那么高效。另外请注意，使用父子化 (Parenting) 时，不统一的比例会产生意外行为。出于这些原因，最好在建模应用程序中以正确的比例创建对象。
+
 尝试1: 高速移动的弹性碰撞
 =======
 模拟物理过程：https://www.bilibili.com/video/BV1bt41147H5
@@ -212,6 +222,166 @@ public class CollideCount : MonoBehaviour
 
 }
 ```
+### 总结
 **1、因为是直线上的动量守恒，所以要使用Rigidbody.constraints来锁定自由度**
 
-**2、因为存在高速运动，所以要设置为CollisionDetectionMode.ContinuousDynamic进行连续碰撞检测，否则会穿过静态碰撞体（此例中使用CollisionDetectionMode.ContinuousSpeculative开启推断性CDD无法得到正确结果）。并且要缩短物理系统工作的固定时间步长，以获得准确的结果（此例中默认步长无法获得正确结果）**
+**2、因为存在高速运动，所以要设置为CollisionDetectionMode.ContinuousDynamic进行连续碰撞检测，否则会穿过静态碰撞体（此例中使用CollisionDetectionMode.ContinuousSpeculative开启推断性CDD无法得到正确结果）。并且要缩短物理系统工作的固定时间步长，以获得准确的结果（此例中默认0.02s的步长无法获得正确结果）**
+
+尝试2：模拟三体运动
+=======
+使用了isKinematic为true和false的两种方法模拟引力。初始状态使用 https://arxiv.org/pdf/math/0011268.pdf 中的特殊解，**其中引力常数G为1**。
+
+Hierarchy下创建空gameobject，附加初始化脚本GravityStart.cs，球体prefab阻力设为0，取消重力影响。
+```C#
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class GravityStart : MonoBehaviour
+{
+    public GameObject sphere;
+    private GameObject sphere1;
+    private GameObject sphere2;
+    private GameObject sphere3;
+    void Start()
+    {
+        GameObject camera = GameObject.Find("Main Camera");
+        camera.transform.Translate(0.0f, 5.0f, 0.0f);
+        camera.transform.LookAt(Vector3.zero);
+
+        sphere1 = Instantiate(sphere, new Vector3(0.97000436f,0,-0.24308753f),Quaternion.identity);
+        sphere2 = Instantiate(sphere, new Vector3(-0.97000436f,0,0.24308753f),Quaternion.identity);
+        sphere3 = Instantiate(sphere, new Vector3(0,0,0),Quaternion.identity);
+
+        sphere1.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
+        sphere2.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
+        sphere3.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
+
+        sphere1.GetComponent<Rigidbody>().mass = 1;
+        sphere2.GetComponent<Rigidbody>().mass = 1;
+        sphere3.GetComponent<Rigidbody>().mass = 1;
+
+        sphere1.GetComponent<Gravity>().InitVelocity = new Vector3(0.466203685f,0,0.43236573f);
+        sphere2.GetComponent<Gravity>().InitVelocity = new Vector3(0.466203685f,0,0.43236573f);
+        sphere3.GetComponent<Gravity>().InitVelocity = new Vector3(-0.93240737f,0,-0.86473146f);
+        
+        //sphere1.GetComponent<Rigidbody>().AddForce(new Vector3(0.466203685f,0,0.43236573f),ForceMode.VelocityChange);
+        //sphere2.GetComponent<Rigidbody>().AddForce(new Vector3(0.466203685f,0,0.43236573f),ForceMode.VelocityChange);
+        //sphere3.GetComponent<Rigidbody>().AddForce(new Vector3(-0.93240737f,0,-0.86473146f),ForceMode.VelocityChange);
+    }
+
+    void Update()
+    {  
+
+    }
+    void FixedUpdate()
+    {
+        
+    }
+}
+```
+球体prefab附加脚本Gravity.cs
+```C#
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Gravity : MonoBehaviour
+{
+    public float G;
+    public Vector3 InitVelocity;
+    private Vector3 vel;
+
+    string Vector3ToString(Vector3 v)
+    {
+        return string.Format("({0},{1},{2})", v.x, v.y, v.z);
+    }
+    void Start()
+    {
+        vel = InitVelocity;
+        GetComponent<Rigidbody>().isKinematic = true;
+    }
+
+    void Update()
+    {
+        GameObject[] planets = GameObject.FindGameObjectsWithTag("Planet");
+        Rigidbody rb = GetComponent<Rigidbody>();
+        Vector3 resultForce = Vector3.zero;
+
+        Vector3 distance;
+        Vector3 direction;
+
+        foreach (GameObject p in planets)
+        {
+            distance = p.transform.localPosition - gameObject.transform.localPosition;
+            direction = distance.normalized;
+            if (gameObject != p)
+            {
+                float gForce = G * rb.mass * p.GetComponent<Rigidbody>().mass / distance.sqrMagnitude;
+                Debug.Log(string.Format("gForce:{0}", gForce));
+                Debug.Log(string.Format("direction:{0}", Vector3ToString(direction)));
+                resultForce += gForce * direction;
+            }
+        }
+        Debug.Log(string.Format("resultForce:{0}", Vector3ToString(resultForce)));
+
+        if (resultForce.magnitude > 0.00001f)
+        {
+            Vector3 resultDirection = resultForce.normalized;
+            float vcos = Vector3.Dot(vel, resultForce) / resultForce.magnitude;
+
+            Vector3 resultV = (vcos + Time.deltaTime * resultForce.magnitude / rb.mass) * resultDirection
+            + vel - vcos * resultDirection;
+
+            vel = resultV;
+
+            Debug.Log(string.Format("vel:{0}", Vector3ToString(vel)));
+
+            transform.Translate(Time.deltaTime * resultV);
+        }
+
+    }
+
+    void FixedUpdate()
+    {
+        // GameObject[] planets = GameObject.FindGameObjectsWithTag("Planet");
+        // Rigidbody rb = GetComponent<Rigidbody>();
+        // Vector3 resultForce = Vector3.zero;
+
+        // Vector3 distance;
+        // Vector3 direction;
+
+        // foreach (GameObject p in planets)
+        // {
+        //     distance = p.transform.localPosition - gameObject.transform.localPosition;
+        //     direction = distance.normalized;
+        //     if (gameObject != p)
+        //     {
+        //         float gForce = G * rb.mass * p.GetComponent<Rigidbody>().mass / distance.sqrMagnitude;
+        //         Debug.Log(string.Format("gForce:{0}", gForce));
+        //         Debug.Log(string.Format("direction:{0}", Vector3ToString(direction)));
+        //         resultForce += gForce * direction;
+        //     }
+        // }
+        // Debug.Log(string.Format("resultForce:{0}", Vector3ToString(resultForce)));
+        // if (resultForce.magnitude > 0.00001f)
+        // {
+        //     rb.AddForce(resultForce);
+        // }
+    }
+}
+```
+### 总结
+**1、isKinematic为true的精度明显比刚体addForce的方式要低，因为Time.deltaTime的原因精确度较差。**
+
+**2、ForceMode的4种模式可以互相转换，动量定理ft=mv，其中f为addForce的向量，t=Time.fixedDeltaTime。
+
+- 默认模式ForceMode.Force，v=ft/m
+
+- ForceMode.Acceleration，忽略质量，即m=1，v=ft
+
+- ForceMode.Impulse，忽略时间，即t=1，v=f/m
+
+- ForceMode.VelocityChange，忽略质量和时间，v=f
+
+**只要最终的v相同，效果就相同**
