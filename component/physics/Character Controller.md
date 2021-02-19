@@ -68,7 +68,7 @@ Tips
 - 在查询中使用的角色控制器胶囊体（比如射线投射）可能会略有缩小。因此，在某些极端情况下，即使查询似乎命中了角色控制器的辅助图标，但实际可能未命中。
 
 输入（Input）
------
+=====
 使用 Input 设置（顶部菜单：Edit > Project Settings，然后选择 Input 类别）可定义项目的输入轴和游戏操作。
 
 要添加更多输入轴，请增大 Size 属性中的值。
@@ -148,6 +148,124 @@ iOS 和 Android 设备能够跟踪多根手指同时触摸屏幕的操作。 您
 注意，每帧可以轮询加速度计硬件数次。 要访问自上一帧以来的所有加速度计样本，可以读取 Input.accelerationEvents 属性数组。 这在重建玩家动作、将加速度数据输入预测器或实现其他精确运动分析时非常有用。
 
 
-世界空间与本地空间
+坐标系与空间变换
+======
+坐标系
+------
+### 坐标系种类
+Unity 中使用到的坐标系分为以下四种
+
+- 世界坐标系 Word Space
+
+即世界空间使用的坐标系，基本单位 unit，x 正方向：左向右， y 正方向：下向上，z 正方向：屏外向屏内。
+
+任何物体使用 Transform.position 即可获得世界坐标值。
+
+场景中根物体使用的就是世界坐标，可在 Inspector 查看世界坐标值。
+
+**对于非根物体则以父物体位置为原点位置使用本地坐标系 Local Space，即相对父物体位置，该物体 Inspector 数值为本地坐标值，可使用 Transform.localposition 获取本地坐标值**
+
+- 屏幕坐标系 Screen Space
+基本单位像素，屏幕左下角为（0，0），右上角为（Screen.width，Screen.height），即实际运行屏幕下的游戏窗口像素值，z 为相机世界坐标单位值。
+
+Input.mousePosition 获取的鼠标坐标，Input.GetTouch(0).position 获取触摸坐标。
+
+- 视口坐标系 Viewport Space
+左下角为（0，0），右上角为（1，1），z 为相机世界坐标单位值。
+
+适合用于坐标系转换。
+
+- UGUI 坐标系 UGUI Space
+基本单位像素，屏幕左上角为（0，0），右下角为（Screen.width，Screen.height）。
+
+### 坐标系转换
+世界坐标系 Space.World 与自身坐标系 Space.Self
+```C#
+// 本地→世界    
+transform.TransformPoint(position); //TransformDirection、TransformVector类似
+TransformVector
+// 世界→本地  
+transform.InverseTransformPoint(position);
+// 世界→屏幕  
+camera.WorldToScreenPoint(position);  
+// 世界→视口  
+Camera.main.WorldToViewportPoint(position)
+// 屏幕→视口  
+camera.ScreenToViewportPoint(position);
+// 视口→屏幕  
+camera.ViewportToScreenPoint(position);
+// 视口→世界  
+camera.ViewportToWorldPoint(position);
+```
+空间变换
 -----
+**Vector3.forward、Vector3.back、Vector3.left、Vector3.right、Vector3.up、Vector3.down 数值是固定的，而transform.forward、 transform.right、transform.up 数值不定，依据物体自身旋转变化，如 transform.forward 为物体 z 轴在世界坐标系中所指方向。**
+
+### 非刚体平移
+- Transform.positon 世界位置坐标
+
+- Transform.localPostion 本地位置坐标
+
+- Transform.Translate(Vector3 translation, Space relativeTo = Space.Self)
+
+- Transform.Translate(float x, float y, float z, Space relativeTo = Space.Self)
+
+- Transform.Translate(Vector3 translation, Transform relativeTo) 如果 relativeTo 为 null，则相对于世界坐标系应用移动。
+
+- Transform.Translate(float x, float y, float z, Transform relativeTo) 如果 relativeTo 为 null，则相对于世界坐标系应用移动。
+```C#
+void Update()
+{
+     // 以每秒1个单位速度延世界坐标系y轴正方向移动
+     transform.Translate(Vector3.up * Time.deltaTime, Space.World);
+     // 以每秒1个单位速度延主相机本地坐标系x轴正方向移动
+     transform.Translate(Vector3.right * Time.deltaTime, Camera.main.transform);
+}
+```
+- public static Vector3 MoveTowards (Vector3 current, Vector3 target, float maxDistanceDelta) 返回Vector3 新位置
+
+以一定速度向目标移动直至到达目标位置，对比插值法可限制最大速度
+```C#
+// maxDistanceDelta 最大移动距离
+void Update()
+{
+     // 当前帧移动距离
+     float step =  speed * Time.deltaTime; 
+     // 由当前位置向目标位置移动距离 step 得出新位置，超过终点则返回终点值  
+     transform.position = Vector3.MoveTowards(transform.position, target.position, step);
+}
+```
+
+- public static Vector3 SmoothDamp (Vector3 current, Vector3 target, ref Vector3 currentVelocity, float smoothTime, float maxSpeed= Mathf.Infinity, float deltaTime= Time.deltaTime)
+
+实现平滑移动，可控制速度，向量通过某个类似于弹簧-阻尼的函数（它从不超过目标）进行平滑。**最常见的用法是用于平滑跟随摄像机**。
+
+|参数||
+|----|-----|
+|current	|当前位置。|
+|target	|尝试达到的目标。|
+|currentVelocity	|当前速度，此值由函数在每次调用时进行修改。|
+|smoothTime	|达到目标所需的近似时间。值越小，达到目标的速度越快。|
+|maxSpeed	|可以选择允许限制最大速度。|
+|deltaTime	|自上次调用此函数以来的时间。默认情况下为 Time.deltaTime。|
+
+```C#
+// 通过使用自身修改的速度指针计算当前位置
+private Vector3 velocity = Vector3.zero;
+void Update()
+{
+     // 定义目标物体的后上方为目标位置
+     Vector3 targetPosition = target.TransformPoint(new Vector3(0, 5, -10));
+     // 以每帧变化的速度 velocity 由当前位置向目标位置移动
+     transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref velocity, 0.3F);
+}
+```
+
+- public static Vector3  Vector3.Lerp(Vector3 a, Vector3 b, float t)，线性插值，`return new Vector3(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.z+(b.z-a.z)*t);`，也就是说，t为0，返回a；t为1，返回b；t=0.5时返回a、b中间的点。**当t大于1时，返回的还是b；当t小于0，返回的是a**。
+
+- public static Vector3  Vector3.LerpUnclamped(Vector3 a, Vector3 b, float t)，与Lerp不同在于t小于0和大于1时没有限制。
+
+- public static Vector3  Vector3.Slerp(Vector3 a, Vector3 b, float t)，球形插值，返回的向量的方向通过a 和 b 的角度之间进行插值， 其 magnitude 在 a 和 b 的大小之间进行插值。参数 t 限制在范围 [0,1] 内。
+
+- public static Vector3  Vector3.SlerpUnclamped(Vector3 a, Vector3 b, float t)，与Lerp不同在于t小于0和大于1时没有限制。
 
