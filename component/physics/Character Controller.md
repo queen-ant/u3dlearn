@@ -133,7 +133,7 @@ Tips
 ### KeyCode
 Event.keyCode 返回的键代码。这些代码直接映射到键盘上的物理键。
 
-键代码可以用于通过 Input.GetKeyDown 和 Input.GetKeyUp 检测键按下和键松开事件。
+键代码可以用于通过 Input.GetKeyDown（**在用户释放键并再次按键之前，它不会返回 true，需要按下状态返回true应使用GetKey**） 和 Input.GetKeyUp 检测键按下和键松开事件。但处理输入时，建议改用 Input.GetAxis 和 Input.GetButton，因为 这允许最终用户对键进行配置。
 
 ### 移动设备
 
@@ -336,5 +336,58 @@ public class ExampleClass : MonoBehaviour
 
 ### 刚体旋转
 
-### 通过CharacterController组件移动物体
+尝试1：通过CharacterController组件移动物体
+=====
+```C#
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
+public class CharaController : MonoBehaviour
+{
+    public float speed = 2.0f;
+    public float jumpSpeed = 6.0f;
+    public float gravity = 20.0f;
+    private CharacterController controller;
+    private Vector3 moveDirection = Vector3.zero;
+    void Start()
+    {
+        controller = GetComponent<CharacterController>();
+        gameObject.transform.position = new Vector3(0, 1, 0);
+
+        GameObject camera = GameObject.Find("Main Camera");
+        camera.transform.Translate(0.0f, 5.0f, -1.0f);
+        camera.transform.LookAt(Vector3.zero);
+    }
+
+    void Update()
+    {
+        if (controller.isGrounded)
+        {
+            moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0.0f, Input.GetAxis("Vertical"));
+            Debug.Log(moveDirection.ToString("F6"));
+            moveDirection = transform.TransformDirection(moveDirection);
+            Debug.Log(moveDirection.ToString("F6"));
+            moveDirection = speed * moveDirection;
+            if (Input.GetButton("Jump"))
+            {
+                moveDirection.y = jumpSpeed;
+            }
+        }
+        else if (Input.GetButton("Horizontal") || Input.GetButton("Vertical")) //跳在空中也能移动
+        {
+            float y = moveDirection.y; //保存重力影响下的垂直分量，即垂直速度矢量
+            moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0.0f, Input.GetAxis("Vertical"));
+            Debug.Log(moveDirection.ToString("F6"));
+            moveDirection = transform.TransformDirection(moveDirection);
+            moveDirection = speed * moveDirection;
+
+            moveDirection.y = y;
+        }
+
+        moveDirection.y = moveDirection.y - (gravity * Time.deltaTime);
+
+        controller.Move(Time.deltaTime * moveDirection);
+    }
+}
+```
