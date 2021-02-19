@@ -328,4 +328,5 @@ public class ExampleClass : MonoBehaviour
 
 ### 刚体平移
 
+### 通过CharacterController组件移动物体
 
