@@ -281,7 +281,7 @@ void Update()
 与Lerp不同在于t小于0和大于1时没有限制。
 
 ```C#
-/ Animates the position in an arc between sunrise and sunset.
+// Animates the position in an arc between sunrise and sunset. 结果是一个拱形
 
 using UnityEngine;
 using System.Collections;
@@ -305,13 +305,13 @@ public class ExampleClass : MonoBehaviour
 
     void Update()
     {
-        // The center of the arc
+        // 弧的中心（将要进行插值的两个向量的起点）
         Vector3 center = (sunrise.position + sunset.position) * 0.5F;
 
-        // move the center a bit downwards to make the arc vertical
+        // 下移中心使弧平滑
         center -= new Vector3(0, 1, 0);
 
-        // Interpolate over the arc relative to center
+        // 围住弧的两个向量（一个扇形），这里两个向量等长所以是一个圆弧
         Vector3 riseRelCenter = sunrise.position - center;
         Vector3 setRelCenter = sunset.position - center;
 
