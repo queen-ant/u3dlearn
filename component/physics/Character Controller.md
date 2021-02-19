@@ -166,16 +166,19 @@ Unity 中使用到的坐标系分为以下四种
 **对于非根物体则以父物体位置为原点位置使用本地坐标系 Local Space，即相对父物体位置，该物体 Inspector 数值为本地坐标值，可使用 Transform.localposition 获取本地坐标值**
 
 - 屏幕坐标系 Screen Space
+
 基本单位像素，屏幕左下角为（0，0），右上角为（Screen.width，Screen.height），即实际运行屏幕下的游戏窗口像素值，z 为相机世界坐标单位值。
 
 Input.mousePosition 获取的鼠标坐标，Input.GetTouch(0).position 获取触摸坐标。
 
 - 视口坐标系 Viewport Space
+
 左下角为（0，0），右上角为（1，1），z 为相机世界坐标单位值。
 
 适合用于坐标系转换。
 
 - UGUI 坐标系 UGUI Space
+
 基本单位像素，屏幕左上角为（0，0），右下角为（Screen.width，Screen.height）。
 
 ### 坐标系转换
@@ -261,11 +264,19 @@ void Update()
 }
 ```
 
-- public static Vector3  Vector3.Lerp(Vector3 a, Vector3 b, float t)，线性插值，`return new Vector3(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.z+(b.z-a.z)*t);`，也就是说，t为0，返回a；t为1，返回b；t=0.5时返回a、b中间的点。**当t大于1时，返回的还是b；当t小于0，返回的是a**。
+- public static Vector3  Vector3.Lerp(Vector3 a, Vector3 b, float t)
 
-- public static Vector3  Vector3.LerpUnclamped(Vector3 a, Vector3 b, float t)，与Lerp不同在于t小于0和大于1时没有限制。
+线性插值，`return new Vector3(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.z+(b.z-a.z)*t);`，也就是说，t为0，返回a；t为1，返回b；t=0.5时返回a、b中间的点。**当t大于1时，返回的还是b；当t小于0，返回的是a**。
 
-- public static Vector3  Vector3.Slerp(Vector3 a, Vector3 b, float t)，球形插值，返回的向量的方向通过a 和 b 的角度之间进行插值， 其 magnitude 在 a 和 b 的大小之间进行插值。参数 t 限制在范围 [0,1] 内。
+- public static Vector3  Vector3.LerpUnclamped(Vector3 a, Vector3 b, float t)
 
-- public static Vector3  Vector3.SlerpUnclamped(Vector3 a, Vector3 b, float t)，与Lerp不同在于t小于0和大于1时没有限制。
+与Lerp不同在于t小于0和大于1时没有限制。
+
+- public static Vector3  Vector3.Slerp(Vector3 a, Vector3 b, float t)
+
+球形插值，返回的向量的方向通过a 和 b 的角度之间进行插值， 其 magnitude 在 a 和 b 的大小之间进行插值。参数 t 限制在范围 [0,1] 内。
+
+- public static Vector3  Vector3.SlerpUnclamped(Vector3 a, Vector3 b, float t)
+
+与Lerp不同在于t小于0和大于1时没有限制。
 
