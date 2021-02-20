@@ -338,6 +338,7 @@ public class ExampleClass : MonoBehaviour
 
 尝试1：通过CharacterController组件移动物体
 =====
+其中柱体附加角色控制器
 <img src="https://s16.directupload.net/images/210220/u6nhwm7c.png">
 
 ```C#
