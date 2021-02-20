@@ -209,13 +209,13 @@ camera.ViewportToWorldPoint(position);
 
 - Transform.localPostion 本地位置坐标
 
-- Transform.Translate(Vector3 translation, Space relativeTo = Space.Self)
+- Transform.Translate(Vector3 translation, Space relativeTo = Space.Self)，如果 relativeTo 被省略或设置为 Space.Self，则会相对于变换的**本地轴**来应用该移动
 
-- Transform.Translate(float x, float y, float z, Space relativeTo = Space.Self)
+- Transform.Translate(float x, float y, float z, Space relativeTo = Space.Self)，如果 relativeTo 被省略或设置为 Space.Self，则会相对于变换的**本地轴**来应用该移动
 
-- Transform.Translate(Vector3 translation, Transform relativeTo) 如果 relativeTo 为 null，则相对于世界坐标系应用移动。
+- Transform.Translate(Vector3 translation, Transform relativeTo) 如果 relativeTo 为 null，则相对于**世界坐标系**应用移动。
 
-- Transform.Translate(float x, float y, float z, Transform relativeTo) 如果 relativeTo 为 null，则相对于世界坐标系应用移动。
+- Transform.Translate(float x, float y, float z, Transform relativeTo) 如果 relativeTo 为 null，则相对于**世界坐标系**应用移动。
 ```C#
 void Update()
 {
@@ -281,7 +281,7 @@ void Update()
 与Lerp不同在于t小于0和大于1时没有限制。
 
 ```C#
-// Animates the position in an arc between sunrise and sunset. 结果是一个拱形
+// Animates the position in an arc between sunrise and sunset. 运动结果是一个拱形
 
 using UnityEngine;
 using System.Collections;
@@ -353,7 +353,7 @@ public class CharaController : MonoBehaviour
     void Start()
     {
         controller = GetComponent<CharacterController>();
-        gameObject.transform.position = new Vector3(0, 1, 0);
+        gameObject.transform.localPosition = new Vector3(0, 1, 0);
 
         GameObject camera = GameObject.Find("Main Camera");
         camera.transform.Translate(0.0f, 5.0f, -1.0f);
@@ -365,7 +365,7 @@ public class CharaController : MonoBehaviour
         if (controller.isGrounded)
         {
             moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0.0f, Input.GetAxis("Vertical"));
-            Debug.Log(moveDirection.ToString("F6"));
+            Debug.Log(string.Format("before:{0}",moveDirection.ToString("F6")) );
             moveDirection = transform.TransformDirection(moveDirection);
             Debug.Log(moveDirection.ToString("F6"));
             moveDirection = speed * moveDirection;
@@ -391,3 +391,21 @@ public class CharaController : MonoBehaviour
     }
 }
 ```
+### 总结
+**1、CharacterController中Move和SimpleMove的区别：**
+
+**Move方法的实际作用和Transform.Translate几乎一样。而且它计算速度是以帧计算的，所以需要乘每帧时间间隔。
+
+**CharacterController.Move(Vector3.forward * Time.deltaTime * 5)**
+
+**返回值是CollisionFlags对象，可以描述与任何物体碰撞的信息**
+
+**而SimpleMove，当你使用它来移动你的目标时，它就具备了“重力”效果，不受Y轴速度影响，只有X轴和Z轴方向的有效。并且移动的时候，它是以秒为单位，不用乘时间。**
+
+**CharacterController.SimpleMove(Vector3.forward * 5)**
+
+**返回值(BOOL类型)，角色接触地面则返回true，否则返回false**
+
+**2、角色控制器的collider是胶囊体，底部是半球，所以无法通过的台阶高度要设置尽量大一些，否则很容易挤上去，高度4倍stepOffset差不多，不应该小于1。**
+
+**3、slopeLimit可以阻止角色通过过陡的斜坡，但是不能阻止跳跃通过，要阻止跳跃过陡的斜坡进行坡度计算即可。获取接触点的位置，创建 _胶囊碰撞体底部半球球心_ 到接触点的向量，该向量与Vector3.down的夹角就是坡度倾角**
