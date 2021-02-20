@@ -394,18 +394,18 @@ public class CharaController : MonoBehaviour
 ### 总结
 **1、CharacterController中Move和SimpleMove的区别：**
 
-**Move方法的实际作用和Transform.Translate几乎一样。而且它计算速度是以帧计算的，所以需要乘每帧时间间隔。
+Move方法的实际作用和Transform.Translate几乎一样。而且它计算速度是以帧计算的，所以**需要乘每帧时间间隔**。
 
-**CharacterController.Move(Vector3.forward * Time.deltaTime * 5)**
+CharacterController.Move(Vector3.forward * Time.deltaTime * 5)
 
-**返回值是CollisionFlags对象，可以描述与任何物体碰撞的信息**
+**返回值**是CollisionFlags对象，可以描述与任何物体碰撞的信息
 
-**而SimpleMove，当你使用它来移动你的目标时，它就具备了“重力”效果，不受Y轴速度影响，只有X轴和Z轴方向的有效。并且移动的时候，它是以秒为单位，不用乘时间。**
+而SimpleMove，当你使用它来移动你的目标时，它就具备了“重力”效果，**不受Y轴速度影响，只有X轴和Z轴方向的有效**。并且移动的时候，它是以秒为单位，**不用乘Time.deltaTime**。
 
-**CharacterController.SimpleMove(Vector3.forward * 5)**
+CharacterController.SimpleMove(Vector3.forward * 5)
 
-**返回值(BOOL类型)，角色接触地面则返回true，否则返回false**
+**返回值**(BOOL类型)，角色接触地面则返回true，否则返回false
 
 **2、角色控制器的collider是胶囊体，底部是半球，所以无法通过的台阶高度要设置尽量大一些，否则很容易挤上去，高度4倍stepOffset差不多，不应该小于1。**
 
-**3、slopeLimit可以阻止角色通过过陡的斜坡，但是不能阻止跳跃通过，要阻止跳跃过陡的斜坡进行坡度计算即可。获取接触点的位置，创建 _胶囊碰撞体底部半球球心_ 到接触点的向量，该向量与Vector3.down的夹角就是坡度倾角**
+3、slopeLimit可以阻止角色通过过陡的斜坡，**但是不能阻止跳跃通过**，要阻止跳跃过陡的斜坡进行坡度计算即可。获取接触点的位置，创建 **胶囊碰撞体底部半球球心** 到接触点的向量，该向量与Vector3.down的夹角就是坡度倾角。
