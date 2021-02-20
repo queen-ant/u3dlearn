@@ -408,4 +408,21 @@ CharacterController.SimpleMove(Vector3.forward * 5)
 
 **2、角色控制器的collider是胶囊体，底部是半球，所以无法通过的台阶高度要设置尽量大一些，否则很容易挤上去，高度4倍stepOffset差不多，不应该小于1。**
 
-**3、slopeLimit可以阻止角色通过过陡的斜坡，但是不能阻止跳跃通过**。要阻止跳跃过陡的斜坡，编写代码进行坡度计算然后进行判断即可。获取接触点的位置，创建 **胶囊碰撞体底部半球球心** 到接触点的向量，该向量与Vector3.down的夹角就是坡度倾角。本次尝试的代码中，上坡时速度会变慢，并且当坡度超出slopeLimit时会自动下滑且无法跳跃。
+**3、slopeLimit可以阻止角色通过过陡的斜坡，但是不能阻止跳跃通过**。要阻止跳跃过陡的斜坡，编写代码进行坡度计算然后进行判断即可。
+
+碰撞时调用CharacterController.OnControllerColliderHit(ControllerColliderHit)
+
+ControllerColliderHit变量：
+|||
+|----|----|
+|collider	|被该控制器撞击的碰撞体。|
+|controller	|撞击该碰撞体的控制器。|
+|gameObject	|被该控制器撞击的游戏对象。|
+|moveDirection	|在发生碰撞时 CharacterController 移动的方向。|
+|moveLength	|该角色在撞到该碰撞体前行进的距离。|
+|normal	|在世界空间中我们碰撞的表面的法线。|
+|point	|世界空间中的撞击点。|
+|rigidbody	|被该控制器撞击的刚体。|
+|transform	|被该控制器撞击的变换组件。|
+
+normal向量与Vector3.down的夹角就是坡度倾角。本次尝试的代码中，上坡时速度会变慢，并且当坡度超出slopeLimit时会自动下滑且无法跳跃。
