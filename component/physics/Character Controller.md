@@ -467,3 +467,5 @@ CharacterController.SimpleMove(Vector3.forward * 5)
 |transform	|被该控制器撞击的变换组件。|
 
 **normal向量与Vector3.up的夹角就是坡度倾角**。本次尝试的代码中，上坡时速度和平地保持一致，并且当坡度超出slopeLimit时会自动下滑且无法跳跃。
+
+**4、对于人形对象的移动，要实现足部贴合如楼梯等地形的效果，需使用FootIk**
