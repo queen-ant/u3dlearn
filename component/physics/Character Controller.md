@@ -345,51 +345,89 @@ using UnityEngine;
 
 public class CharaController : MonoBehaviour
 {
-    public float speed = 2.0f;
-    public float jumpSpeed = 6.0f;
-    public float gravity = 20.0f;
+    public float speed;
+    public float jumpSpeed;
+    public float gravity;
     private CharacterController controller;
-    private Vector3 moveDirection = Vector3.zero;
+    private Vector3 moveDirection;
+    private Vector3 hitNormal;
+    private bool isGlide;
+    private CollisionFlags collisionFlags;
+
     void Start()
     {
+        speed = 5.0f;
+        jumpSpeed = 5.0f;
+        gravity = 20.0f;
+
+        hitNormal = Vector3.zero;
+        moveDirection = Vector3.zero;
+        isGlide = false;
+        collisionFlags = CollisionFlags.None;
+
         controller = GetComponent<CharacterController>();
         gameObject.transform.localPosition = new Vector3(0, 1, 0);
 
         GameObject camera = GameObject.Find("Main Camera");
-        camera.transform.Translate(0.0f, 5.0f, -1.0f);
-        camera.transform.LookAt(Vector3.zero);
+        camera.transform.Translate(GameObject.Find("Plane").transform.position.x - 1.0f, 5.0f, -5.0f);
+        camera.transform.LookAt(GameObject.Find("Plane").transform.position);
+    }
+
+    void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        hitNormal = hit.normal;
+        if (hit.rigidbody != null)
+        {
+            hit.rigidbody.AddForce(-hitNormal, ForceMode.VelocityChange);
+        }
+
     }
 
     void Update()
     {
-        if (controller.isGrounded)
+        float angle =  Vector3.Angle(hitNormal, Vector3.up);
+        if (angle < controller.slopeLimit || collisionFlags == CollisionFlags.Sides)
         {
-            moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0.0f, Input.GetAxis("Vertical"));
-            Debug.Log(string.Format("before:{0}",moveDirection.ToString("F6")) );
-            moveDirection = transform.TransformDirection(moveDirection);
-            Debug.Log(moveDirection.ToString("F6"));
-            moveDirection = speed * moveDirection;
-            if (Input.GetButton("Jump"))
+            isGlide = false;
+        }
+        else
+        {
+            isGlide = true;
+        }
+
+        if (!isGlide)
+        {
+            if (controller.isGrounded)
             {
-                moveDirection.y = jumpSpeed;
+                moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0.0f, Input.GetAxis("Vertical"));
+                moveDirection = Mathf.Cos(angle*Mathf.PI/180.0f) * speed * moveDirection;
+                if (Input.GetButton("Jump"))
+                {
+                    moveDirection.y = jumpSpeed;
+                }
+            }
+            else if (Input.GetButton("Horizontal") || Input.GetButton("Vertical")) //跳在空中也能移动
+            {
+                float y = moveDirection.y; //保存重力影响下的垂直分量，即垂直速度矢量
+                moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0.0f, Input.GetAxis("Vertical"));
+                moveDirection = speed * moveDirection;
+
+                moveDirection.y = y;
             }
         }
-        else if (Input.GetButton("Horizontal") || Input.GetButton("Vertical")) //跳在空中也能移动
+        else
         {
-            float y = moveDirection.y; //保存重力影响下的垂直分量，即垂直速度矢量
-            moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0.0f, Input.GetAxis("Vertical"));
-            Debug.Log(moveDirection.ToString("F6"));
-            moveDirection = transform.TransformDirection(moveDirection);
-            moveDirection = speed * moveDirection;
-
+            float y = moveDirection.y;
+            moveDirection = hitNormal - hitNormal.y * Vector3.up;
             moveDirection.y = y;
         }
 
         moveDirection.y = moveDirection.y - (gravity * Time.deltaTime);
 
-        controller.Move(Time.deltaTime * moveDirection);
+        collisionFlags = controller.Move(Time.deltaTime * moveDirection);
     }
 }
+
 ```
 ### 总结
 **1、CharacterController中Move和SimpleMove的区别：**
@@ -412,7 +450,7 @@ CharacterController.SimpleMove(Vector3.forward * 5)
 
 碰撞时调用CharacterController.OnControllerColliderHit(ControllerColliderHit)
 
-ControllerColliderHit变量：
+**ControllerColliderHit**变量：
 |||
 |----|----|
 |collider	|被该控制器撞击的碰撞体。|
@@ -425,4 +463,4 @@ ControllerColliderHit变量：
 |rigidbody	|被该控制器撞击的刚体。|
 |transform	|被该控制器撞击的变换组件。|
 
-normal向量与Vector3.down的夹角就是坡度倾角。本次尝试的代码中，上坡时速度会变慢，并且当坡度超出slopeLimit时会自动下滑且无法跳跃。
+**normal向量与Vector3.up的夹角就是坡度倾角**。本次尝试的代码中，上坡时速度和平地保持一致，并且当坡度超出slopeLimit时会自动下滑且无法跳跃。
