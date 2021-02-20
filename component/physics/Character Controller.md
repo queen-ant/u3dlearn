@@ -338,7 +338,8 @@ public class ExampleClass : MonoBehaviour
 
 尝试1：通过CharacterController组件移动物体
 =====
-<img scr="https://s16.directupload.net/images/210220/u6nhwm7c.png">
+<img src="https://s16.directupload.net/images/210220/u6nhwm7c.png">
+
 ```C#
 using System.Collections;
 using System.Collections.Generic;
