@@ -372,7 +372,7 @@ q={cos(t/2),sin(t/2)·u}，有|u|=1，于是|q|=1
 - **在Unity中transform.rotation是四元数Quaternion，transform.eulerAngles是欧拉角，而Inspector界面上Transform组件的Rotation是欧拉角。Inspector上的Rotation中的X Y Z值范围是(-180,180)，对于脚本中超出的部分会自动进行计算映射到范围内**
 - **Quaternion.Angle返回的不是四元数的夹角，是四元数表示的两个三维空间中的旋转变换的夹角，实际四元数的夹角是该旋转变换夹角的一半。**
 - **Quaternion.Lerp线性插值，比起球面插值Quaternion.Slerp高效一些，但是在大弧度的情况下不能保证均匀的角速度。而在弧度非常小时，因为浮点计算的误差，sin(θ)可能会被近似为0.0，从而导致除以0的错误，此时应该用Lerp。**
-- **Quaternion.LookRotation,LookAt与LookRotation的参数都相似，但前者是将游戏对象的z轴指向参数所表示的那个点，而后者是将游戏对象的z轴指向参数所表示的向量的方向。**
+- **Quaternion.LookRotation，LookAt与LookRotation的参数都相似，但前者是将游戏对象的z轴指向参数所表示的那个点，而后者是将游戏对象的z轴指向参数所表示的向量的方向。**
 
 
 #### 为什么没有三元数
