@@ -241,7 +241,7 @@ void Update()
 
 - public static Vector3 SmoothDamp (Vector3 current, Vector3 target, ref Vector3 currentVelocity, float smoothTime, float maxSpeed= Mathf.Infinity, float deltaTime= Time.deltaTime)
 
-实现平滑移动，可控制速度，向量通过某个类似于弹簧-阻尼的函数（它从不超过目标）进行平滑。**最常见的用法是用于平滑跟随摄像机**。
+**实现平滑移动**，可控制速度，向量通过某个类似于弹簧-阻尼的函数（它从不超过目标）进行平滑。**最常见的用法是用于平滑跟随摄像机**。
 
 |参数||
 |----|-----|
@@ -266,7 +266,7 @@ void Update()
 
 - public static Vector3  Vector3.Lerp(Vector3 a, Vector3 b, float t)
 
-线性插值，`return new Vector3(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.z+(b.z-a.z)*t);`，也就是说，t为0，返回a；t为1，返回b；t=0.5时返回a、b中间的点。**当t大于1时，返回的还是b；当t小于0，返回的是a**。
+**线性插值**，`return new Vector3(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.z+(b.z-a.z)*t);`，也就是说，t为0，返回a；t为1，返回b；t=0.5时返回a、b中间的点。**当t大于1时，返回的还是b；当t小于0，返回的是a**。
 
 - public static Vector3  Vector3.LerpUnclamped(Vector3 a, Vector3 b, float t)
 
@@ -274,7 +274,7 @@ void Update()
 
 - public static Vector3  Vector3.Slerp(Vector3 a, Vector3 b, float t)
 
-球面插值，返回的向量的方向通过a 和 b 的角度之间进行插值， 其 magnitude 在 a 和 b 的大小之间进行插值。参数 t 限制在范围 [0,1] 内。
+**球面插值**，返回的向量的方向通过a 和 b 的角度之间进行插值， 其 magnitude 在 a 和 b 的大小之间进行插值。参数 t 限制在范围 [0,1] 内。
 
 - public static Vector3  Vector3.SlerpUnclamped(Vector3 a, Vector3 b, float t)
 
@@ -348,22 +348,31 @@ ji=-k,kj=-i,ik=-j
 |q|=a^2+b^2+c^2+d^2
 
 #### 基本性质
-**复数乘法满足交换律，四元数乘法不满足**
+复数乘法满足交换律，四元数乘法不满足
 
 q*=a-bi-cj-dk
 
-q·q*=|q|^2
+qq*=|q|^2
 
 q^-1 = q*/|q|^2
 
-q1\*·q2\* = (q2·q1)*
+q1\*q2\* = (q2q1)*
 
 #### 旋转公式
 q={cos(t/2),sin(t/2)·u}，有|u|=1，于是|q|=1
 
 则向量v以u为转轴，按右手系旋转t角度，v'=qvq*=qvq^-1
 
-**先旋转q1再旋转q2，可复合为q2·q1，是左乘**
+先旋转q1再旋转q2，可复合为q2·q1，是左乘
+
+两个不同的单位四元数 𝑞 与 −𝑞 对应的是同一个旋转
+
+#### Unity中的Quaternion
+- **Unity中的Quaternion乘法操作是左侧的四元数先应用旋转，即复合额外旋转写成```transform.rotation *= extraRotation.rotation;```**
+- **在Unity中transform.rotation是四元数Quaternion，transform.eulerAngles是欧拉角，而Inspector界面上Transform组件的Rotation是欧拉角。Inspector上的Rotation中的X Y Z值范围是(-180,180)，对于脚本中超出的部分会自动进行计算映射到范围内**
+- **Quaternion.Angle返回的不是四元数的夹角，是四元数表示的两个三维空间中的旋转变换的夹角，实际四元数的夹角是该旋转变换夹角的一半。**
+- **Quaternion.Lerp线性插值，比起球面插值Quaternion.Slerp高效一些，但是在大弧度的情况下不能保证均匀的角速度。而在弧度非常小时，因为浮点计算的误差，sin(θ)可能会被近似为0.0，从而导致除以0的错误，此时应该用Lerp。
+- **Quaternion.LookRotation,LookAt与LookRotation的参数都相似，但前者是将游戏对象的z轴指向参数所表示的那个点，而后者是将游戏对象的z轴指向参数所表示的向量的方向。**
 
 
 #### 为什么没有三元数
