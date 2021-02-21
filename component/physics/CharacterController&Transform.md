@@ -1,6 +1,3 @@
-<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"></script>
-
-
 角色控制器（CharacterController）
 =======
 角色控制器 (Character Controller) 主要用于第三人称玩家控制或者是不使用 __刚体__ 物理组件的第一人称玩家控制。
@@ -277,7 +274,7 @@ void Update()
 
 - public static Vector3  Vector3.Slerp(Vector3 a, Vector3 b, float t)
 
-球形插值，返回的向量的方向通过a 和 b 的角度之间进行插值， 其 magnitude 在 a 和 b 的大小之间进行插值。参数 t 限制在范围 [0,1] 内。
+球面插值，返回的向量的方向通过a 和 b 的角度之间进行插值， 其 magnitude 在 a 和 b 的大小之间进行插值。参数 t 限制在范围 [0,1] 内。
 
 - public static Vector3  Vector3.SlerpUnclamped(Vector3 a, Vector3 b, float t)
 
@@ -339,12 +336,36 @@ https://krasjet.github.io/quaternion/bonus_gimbal_lock.pdf
 #### 四元数描述旋转
 https://krasjet.github.io/quaternion/quaternion.pdf
 
-$$
-\begin{array}{c}
-四元数 q = a+ib+jc+kd \\
-i^{2} = j^{2} = k^{2} = ijk = -1
-\end{array}
-$$
+##### 定义
+四元数q=a+bi+cj+dk，也可表示为q={a,u},u=bi+cj+dk
+
+i^2=j^2=k^2=ijk=-1
+
+ij=k,jk=i,ki=j
+
+ji=-k,kj=-i,ik=-j
+
+|q|=a^2+b^2+c^2+d^2
+
+##### 基本性质
+**乘法不满足交换律**
+
+q*=a-bi-cj-dk
+
+q·q*=|q|^2
+
+q^-1 = q*/|q|^2
+
+q1\*·q2\* = (q2·q1)*
+
+##### 旋转公式
+q={cos(t/2),sin(t/2)·u}，有|u|=1，于是|q|=1
+
+则向量v以u为转轴，按右手系旋转t角度，v'=qvq*=qvq^-1
+
+**先旋转q1再旋转q2，可复合为q2·q1，是左乘**
+
+
 
 **复数乘法满足交换律，四元数乘法不满足**
 
@@ -367,7 +388,7 @@ $$
 尝试1：通过CharacterController组件移动物体
 =====
 其中柱体附加角色控制器
-<img src="https://s16.directupload.net/images/210220/u6nhwm7c.png">
+
 
 ```C#
 using System.Collections;
