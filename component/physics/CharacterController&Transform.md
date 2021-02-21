@@ -330,14 +330,24 @@ public class ExampleClass : MonoBehaviour
 
 ### 四元数
 
-#### 欧拉角
-#### 万向锁
+#### 欧拉角与万向锁
+https://krasjet.github.io/quaternion/bonus_gimbal_lock.pdf
 
 #### 四元数描述旋转
+https://krasjet.github.io/quaternion/quaternion.pdf
+
+$$
+\begin{array}{c}
+四元数 q = a+ib+jc+kd \\
+i^{2} = j^{2} = k^{2} = ijk = -1
+\end{array}
+$$
+
+**复数乘法满足交换律，四元数乘法不满足**
 
 #### 为什么没有三元数
 
-复数的基是 1和 i 生成的 4阶群, 1 i -1 -i
+复数的基是 1和 i 生成的4阶群 {1 i -1 -i}
 
 根据拉格朗日陪集定理, 子群的阶要能整除父群的阶,
 
