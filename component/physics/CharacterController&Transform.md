@@ -336,7 +336,7 @@ https://krasjet.github.io/quaternion/bonus_gimbal_lock.pdf
 #### 四元数描述旋转
 https://krasjet.github.io/quaternion/quaternion.pdf
 
-##### 定义
+#### 定义
 四元数q=a+bi+cj+dk，也可表示为q={a,u},u=bi+cj+dk
 
 i^2=j^2=k^2=ijk=-1
@@ -347,8 +347,8 @@ ji=-k,kj=-i,ik=-j
 
 |q|=a^2+b^2+c^2+d^2
 
-##### 基本性质
-**乘法不满足交换律**
+#### 基本性质
+**复数乘法满足交换律，四元数乘法不满足**
 
 q*=a-bi-cj-dk
 
@@ -358,16 +358,13 @@ q^-1 = q*/|q|^2
 
 q1\*·q2\* = (q2·q1)*
 
-##### 旋转公式
+#### 旋转公式
 q={cos(t/2),sin(t/2)·u}，有|u|=1，于是|q|=1
 
 则向量v以u为转轴，按右手系旋转t角度，v'=qvq*=qvq^-1
 
 **先旋转q1再旋转q2，可复合为q2·q1，是左乘**
 
-
-
-**复数乘法满足交换律，四元数乘法不满足**
 
 #### 为什么没有三元数
 
