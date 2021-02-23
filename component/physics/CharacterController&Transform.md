@@ -417,6 +417,7 @@ q={cos(t/2),sin(t/2)·u}，有|u|=1，于是|q|=1
 
 两个不同的单位四元数 𝑞 与 −𝑞 对应的是同一个旋转
 
+<span id="Quaternion"></span>
 #### Unity中的Quaternion
 - **new Quaternion(x,y,z,w)，最后面的w是标量**
 - **Unity中的Quaternion乘法操作是左侧的四元数先应用旋转，即复合额外旋转写成```transform.rotation *= extraRotation.rotation;```**
@@ -566,7 +567,53 @@ void Start()
 - Quaternion.SlerpUnclamped(Quaternion a, Quaternion b, float t)
 
 返回插值，同Vector3
+
 ### 刚体旋转
+
+- Rigidbody.rotation 刚体旋转状态
+
+- Rigidbody.angularVelocity 刚体角速度
+
+- Rigidbody.constraints 刚体约束
+
+- Rigidbody.MoveRotation(Quaternion rot)
+
+类似Rigidbody.MovePosition
+
+-Rigidbody.AddTorque(Vector3 torque, ForceMode mode = ForceMode.Force)
+
+-Rigidbody.AddTorque(float x, float y, float z, ForceMode mode = ForceMode.Force)
+
+相对世界坐标
+
+-Rigidbody.AddRelativeTorque(Vector3 torque, ForceMode mode = ForceMode.Force)
+
+-Rigidbody.AddRelativeTorque(float x, float y, float z, ForceMode mode = ForceMode.Force)
+
+相对本地坐标
+```C#
+// Rotate an object around its Y (upward) axis in response to
+// left/right controls.
+using UnityEngine;
+using System.Collections;
+
+public class ExampleClass : MonoBehaviour
+{
+    public float torque;
+    public Rigidbody rb;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+    }
+
+    void FixedUpdate()
+    {
+        float turn = Input.GetAxis("Horizontal");
+        rb.AddTorque(transform.up * torque * turn);
+    }
+}
+```
 
 尝试1：通过CharacterController组件移动物体
 =====
@@ -704,8 +751,7 @@ CharacterController.SimpleMove(Vector3.forward * 5)
 
 尝试2：通过Transform模拟自转和公转
 =====
-
-RotationStart.cs
+初始化脚本RotationStart.cs，Sphere为prefab
 ```C#
 using System.Collections;
 using System.Collections.Generic;
@@ -739,8 +785,7 @@ public class RotationStart : MonoBehaviour
 }
 
 ```
-
-Rotation.cs
+控制脚本Rotation.cs，附加到Sphere的prefab上
 ```C#
 using System.Collections;
 using System.Collections.Generic;
@@ -799,3 +844,6 @@ public class Rotation : MonoBehaviour
 }
 
 ```
+### 总结
+
+[Unity中的Quaternion](###Unity中的Quaternion)
