@@ -809,8 +809,8 @@ public class Rotation : MonoBehaviour
 
         revolutionPlaneNormal = new Vector3(1, 1, -1);
         revolutionPeriod = 10.0f;
-        rotationAxis = 2 * Vector3.up;
-        rotationSpeed = 10;
+        rotationAxis = Vector3.up;
+        rotationSpeed = 100;
 
         Vector3 dis = planet.transform.localPosition - star.transform.localPosition;
         revolutionPlaneNormal = (revolutionPlaneNormal - Vector3.Project(revolutionPlaneNormal, dis)).normalized;
@@ -825,7 +825,7 @@ public class Rotation : MonoBehaviour
 
     void Update()
     {
-        planet.transform.Rotate(rotationAxis * rotationSpeed * Time.deltaTime);
+        planet.transform.Rotate(rotationAxis, rotationSpeed * Time.deltaTime);
 
         //Slerp若改成Lerp会明显导致线速度不稳定
         Quaternion qLerp = Quaternion.SlerpUnclamped(Quaternion.identity, revolution180
@@ -846,6 +846,10 @@ public class Rotation : MonoBehaviour
 ### 总结
 
 [Unity中的Quaternion](#unity中的quaternion)
+
+1、SlerpUnclamped可以对[0,1]之外的范围插值
+
+2、DrawLine最好在FixedUpdate中调用
 
 - public static void DrawLine (Vector3 start, Vector3 end, Color color= Color.white, float duration= 0.0f, bool depthTest= true)
 
