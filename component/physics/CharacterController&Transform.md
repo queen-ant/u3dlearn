@@ -368,6 +368,7 @@ q={cos(t/2),sin(t/2)·u}，有|u|=1，于是|q|=1
 两个不同的单位四元数 𝑞 与 −𝑞 对应的是同一个旋转
 
 #### Unity中的Quaternion
+- **new Quaternion(x,y,z,w)，最后面的w是标量**
 - **Unity中的Quaternion乘法操作是左侧的四元数先应用旋转，即复合额外旋转写成```transform.rotation *= extraRotation.rotation;```**
 - **在Unity中transform.rotation是四元数Quaternion，transform.eulerAngles是欧拉角，而Inspector界面上Transform组件的Rotation是欧拉角。Inspector上的Rotation中的X Y Z值范围是(-180,180)，对于脚本中超出的部分会自动进行计算映射到范围内**
 - **Quaternion.Angle返回的不是四元数的夹角，是四元数表示的两个三维空间中的旋转变换的夹角，实际四元数的夹角是该旋转变换夹角的一半。**
@@ -388,6 +389,12 @@ q={cos(t/2),sin(t/2)·u}，有|u|=1，于是|q|=1
 如果要完整兼容复数空间，8阶和4阶中间没有三元数的空间了
 
 ### 非刚体旋转
+
+- Transform.Rotate(Vector3 eulers, Space relativeTo = Space.Self)
+
+- Transform.Rotate(float xAngle, float yAngle, float zAngle, Space relativeTo = Space.Self)
+
+- Transform.Rotate(Vector3 axis, float angle, Space relativeTo = Space.Self)
 
 ### 刚体旋转
 
@@ -528,3 +535,98 @@ CharacterController.SimpleMove(Vector3.forward * 5)
 尝试2：通过Transform模拟自转和公转
 =====
 
+RotationStart.cs
+```C#
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class RotationStart : MonoBehaviour
+{
+    public GameObject Sphere;
+    private GameObject sphere1;
+    private GameObject sphere2;
+    private GameObject sphere3;
+    void Start()
+    {
+        sphere1 = Instantiate(Sphere,new Vector3(0,0,0),Quaternion.identity);
+        sphere2 = Instantiate(Sphere,new Vector3(10,0,10),Quaternion.identity);
+        sphere3 = Instantiate(Sphere,new Vector3(10.5f,0,10),Quaternion.identity);
+
+        sphere1.transform.localScale = new Vector3(5,5,5);
+        sphere3.transform.localScale = new Vector3(0.5f,0.5f,0.5f);
+
+        sphere1.name = "Star";
+        sphere2.name = "Planet";
+
+        sphere3.transform.parent = sphere2.transform;
+
+        GameObject camera = GameObject.Find("Main Camera");
+        camera.transform.localPosition = new Vector3(40,20,0);
+        camera.transform.LookAt(Vector3.zero);
+
+    }
+
+}
+
+```
+
+Rotation.cs
+```C#
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Rotation : MonoBehaviour
+{
+    public Vector3 revolutionPlaneNormal;
+    public float revolutionPeriod;
+    public Vector3 rotationAxis;
+    public float rotationSpeed;
+    private GameObject star;
+    private GameObject planet;
+    private Vector3 lastPlanetPosition;
+    private float revolutionStartTime;
+    Quaternion qv0;
+    private Quaternion revolution180;
+    void Start()
+    {
+        star = GameObject.Find("Star");
+        planet = GameObject.Find("Planet");
+
+        revolutionPlaneNormal = new Vector3(1, 1, -1);
+        revolutionPeriod = 10.0f;
+        rotationAxis = 2 * Vector3.up;
+        rotationSpeed = 10;
+
+        Vector3 dis = planet.transform.localPosition - star.transform.localPosition;
+        revolutionPlaneNormal = (revolutionPlaneNormal - Vector3.Project(revolutionPlaneNormal, dis)).normalized;
+
+        qv0 = new Quaternion(dis.x, dis.y, dis.z, 0);
+        revolution180 = new Quaternion(revolutionPlaneNormal.x, revolutionPlaneNormal.y, revolutionPlaneNormal.z, 0);
+
+        revolutionStartTime = 2;
+
+        lastPlanetPosition = planet.transform.localPosition;
+    }
+
+    void Update()
+    {
+        planet.transform.Rotate(rotationAxis * rotationSpeed * Time.deltaTime);
+
+        //Slerp若改成Lerp会明显导致线速度不稳定
+        Quaternion qLerp = Quaternion.SlerpUnclamped(Quaternion.identity, revolution180
+         , 2 * ((Time.time - revolutionStartTime) < 0 ? 0 : (Time.time - revolutionStartTime)) / revolutionPeriod);
+        Quaternion qv = qLerp * qv0 * (Quaternion.Inverse(qLerp));
+        planet.transform.localPosition = new Vector3(qv.x,qv.y,qv.z);
+
+    }
+    void FixedUpdate()
+    {
+        Debug.DrawLine(lastPlanetPosition, planet.transform.localPosition, Color.white, revolutionPeriod);
+        lastPlanetPosition = planet.transform.localPosition;
+        Debug.DrawLine(planet.transform.localPosition, rotationAxis + planet.transform.localPosition, Color.red);
+    }
+}
+
+```
