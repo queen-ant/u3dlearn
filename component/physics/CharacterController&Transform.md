@@ -417,7 +417,6 @@ q={cos(t/2),sin(t/2)·u}，有|u|=1，于是|q|=1
 
 两个不同的单位四元数 𝑞 与 −𝑞 对应的是同一个旋转
 
-<span id="Quaternion"></span>
 #### Unity中的Quaternion
 - **new Quaternion(x,y,z,w)，最后面的w是标量**
 - **Unity中的Quaternion乘法操作是左侧的四元数先应用旋转，即复合额外旋转写成```transform.rotation *= extraRotation.rotation;```**
@@ -846,4 +845,21 @@ public class Rotation : MonoBehaviour
 ```
 ### 总结
 
-[Unity中的Quaternion](##Unity中的Quaternion)
+[Unity中的Quaternion](#unity中的quaternion)
+
+- public static void DrawLine (Vector3 start, Vector3 end, Color color= Color.white, float duration= 0.0f, bool depthTest= true);
+|参数||
+|----|----|
+|start	|应作为该直线起始点的世界空间中的点。|
+|end	|应作为该直线结束点的世界空间中的点。|
+|color	|该直线的颜色。|
+|duration	|该直线的可见长度应为多长。|
+|depthTest	|该直线是否应被靠近此摄像机的对象遮挡？|
+
+在指定的起始点与结束点之间绘制一条直线。
+
+当**游戏正在运行并且启用辅助线框绘图（Gizmos）时**，将在 Editor 的 Game 视图中绘制直线。
+
+duration 是在第一次显示该直线后该直线可见的时间长短（单位为秒）。如果持续时间为零，则该直线仅显示一帧。
+
+注意：这仅用于调试播放模式。应改用 Gizmos.Drawline 或 Handles.DrawLine 来绘制 Editor 辅助线框。
