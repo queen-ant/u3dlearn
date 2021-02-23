@@ -559,14 +559,13 @@ public class RotationStart : MonoBehaviour
         sphere1.name = "Star";
         sphere2.name = "Planet";
 
+        //作为sphere2的子物体用于指示自转状态，因为没贴图
         sphere3.transform.parent = sphere2.transform;
 
         GameObject camera = GameObject.Find("Main Camera");
         camera.transform.localPosition = new Vector3(40,20,0);
         camera.transform.LookAt(Vector3.zero);
-
     }
-
 }
 
 ```
