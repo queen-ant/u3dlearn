@@ -847,7 +847,8 @@ public class Rotation : MonoBehaviour
 
 [Unity中的Quaternion](#unity中的quaternion)
 
-- public static void DrawLine (Vector3 start, Vector3 end, Color color= Color.white, float duration= 0.0f, bool depthTest= true);
+- public static void DrawLine (Vector3 start, Vector3 end, Color color= Color.white, float duration= 0.0f, bool depthTest= true)
+
 |参数||
 |----|----|
 |start	|应作为该直线起始点的世界空间中的点。|
