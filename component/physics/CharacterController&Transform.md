@@ -417,7 +417,105 @@ void Update()
      transform.RotateAround(target, Vector3.up, 30 * Time.deltaTime);
 }
 ```
+- Transform.LookAt(Vector3 worldPosition, Vector3 worldUp = Vector3.up)
 
+- Transform.LookAt(Transform target, Vector3 worldUp = Vector3.up)
+
+使z轴指向目标，之后自转使得worldUp垂直z轴向上
+```C#
+// 旋转使物体 z 轴指向目标位置，且 x 轴同目标方向与 upwards 的叉积方向一致，y 轴同 z 和 x 轴的叉积方向一致
+transform.LookAt(targetPosition);
+transform.LookAt(target.transform);
+```
+
+- public static Vector3 RotateTowards (Vector3 current, Vector3 target, float maxRadiansDelta, float maxMagnitudeDelta);
+- 
+返回Vector3 RotateTowards 生成的位置。
+
+current 向量将朝 target 方向旋转 maxRadiansDelta 的角度， **但其将准确地落在目标上而不会超过目标**。 如果 current 和 target 的大小不同，则在旋转期间对结果大小进行线性插值。 如果为 maxRadiansDelta **使用负值，则向量将朝远离 target 的方向旋转， 直到它指向完全相反的方向，然后停止**。
+```C#
+using UnityEngine;
+using System.Collections;
+
+public class ExampleClass : MonoBehaviour
+{
+    // The target marker.
+    Transform target;
+
+    // Angular speed in radians per sec.
+    float speed;
+
+    void Update()
+    {
+        Vector3 targetDir = target.position - transform.position;
+
+        // The step size is equal to speed times frame time.
+        float step = speed * Time.deltaTime;
+
+        Vector3 newDir = Vector3.RotateTowards(transform.forward, targetDir, step, 0.0f);
+        Debug.DrawRay(transform.position, newDir, Color.red);
+
+        // Move our position a step closer to the target.
+        transform.rotation = Quaternion.LookRotation(newDir);
+    }
+}
+```
+- public static Quaternion RotateTowards (Quaternion from, Quaternion to, float maxDegreesDelta)
+
+如果 maxDegreesDelta 为负值，则向远离 to 的方向旋转，直到旋转恰好为相反的方向。
+```C#
+void Update()
+{
+    // 当前一帧旋转角度
+    var step = speed * Time.deltaTime;
+    // 由当前旋转角度向目标旋转角度旋转一帧角度
+    transform.rotation = Quaternion.RotateTowards(transform.rotation, target.rotation, step);
+}
+```
+- public static Quaternion FromToRotation (Vector3 fromDirection, Vector3 toDirection);
+
+将fromDirection旋转至toDirection
+```C#
+void Start()
+{
+    // 将物体 y 轴旋转至当前 z 轴正方向
+    transform.rotation = Quaternion.FromToRotation(Vector3.up, transform.forward);
+}
+```
+
+- Quaternion.LookRotation(Vector3 forward, Vector3 upwards = Vector3.up)
+
+旋转至forward方向
+```C#
+void Update()
+{
+    // 目标方向
+    Vector3 relativePos = target.position - transform.position;
+    // 计算由 z 轴正方向旋转到目标方向的角度，且 x 轴同目标方向与 upwards 的叉积方向一致，y 轴同 z 和 x 轴的叉积方向一致
+    Quaternion rotation = Quaternion.LookRotation(relativePos, Vector3.up);
+    transform.rotation = rotation;
+}
+```
+- public static Quaternion AngleAxis (float angle, Vector3 axis);
+
+创建一个围绕 axis 旋转 angle 度的旋转。
+```C#
+void Start()
+{
+    // 绕世界坐标系 y 轴正方向旋转30°
+    transform.rotation = Quaternion.AngleAxis(30, Vector3.up);
+}
+```
+
+- Quaternion.Lerp(Quaternion a, Quaternion b, float t)
+
+- Quaternion.LerpUnclamped(Quaternion a, Quaternion b, float t)
+
+- Quaternion.Slerp(Quaternion a, Quaternion b, float t)
+
+- Quaternion.SlerpUnclamped(Quaternion a, Quaternion b, float t)
+
+返回插值，同Vector3
 ### 刚体旋转
 
 尝试1：通过CharacterController组件移动物体
