@@ -586,7 +586,7 @@ public class Rotation : MonoBehaviour
     private GameObject planet;
     private Vector3 lastPlanetPosition;
     private float revolutionStartTime;
-    Quaternion qv0;
+    private Quaternion qv0;
     private Quaternion revolution180;
     void Start()
     {
