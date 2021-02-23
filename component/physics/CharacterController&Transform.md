@@ -394,7 +394,29 @@ q={cos(t/2),sin(t/2)·u}，有|u|=1，于是|q|=1
 
 - Transform.Rotate(float xAngle, float yAngle, float zAngle, Space relativeTo = Space.Self)
 
+应用一个以欧拉角表示的旋转，默认本地空间
+
 - Transform.Rotate(Vector3 axis, float angle, Space relativeTo = Space.Self)
+
+围绕自转轴转过一个角度，转轴需要normalized，默认本地空间
+```C#
+void Update()
+{
+     // 以物体 y 轴正方向以30°每秒的速度旋转
+     transform.Rotate(Vector3.up, 30 * Time.deltaTime, Space.Self);
+}
+```
+
+- Transform.RotateAround(Vector3 point, Vector3 axis, float angle)
+
+绕外部转轴旋转
+```C#
+void Update()
+{
+     // 绕世界坐标系中目标位置的 y 轴正方向以30°每秒旋转和移动（即绕轴画圆）
+     transform.RotateAround(target, Vector3.up, 30 * Time.deltaTime);
+}
+```
 
 ### 刚体旋转
 
