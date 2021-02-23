@@ -328,6 +328,56 @@ public class ExampleClass : MonoBehaviour
 
 ### 刚体平移
 
+- Rigidbody.position 刚体世界位置坐标
+
+- Rigidbody.velocity 刚体速度
+
+- Rigidbody.MovePosition(Vector3 position)
+
+使用 Rigidbody.MovePosition 移动刚体，符合刚体的插值设置。
+
+如果在刚体上启用了刚体插值（Interpolate），则调用 Rigidbody.MovePosition 会导致在渲染的任意中间帧中的两个位置之间平滑过渡。若要在每个 FixedUpdate 中连续移动刚体，则应使用该方法。
+
+若要将刚体从一个位置传送到另一个位置，并且不渲染任何中间位置，请改为设置 Rigidbody.position
+
+- AddForce(Vector3 force, ForceMode mode = ForceMode.Force)
+
+- AddForce(float x, float y, float z, ForceMode mode = ForceMode.Force)
+
+作用力参考世界坐标系
+
+**力只能应用于处于活动状态的刚体。如果 GameObject 处于非活动状态，则 AddForce 没有效果。**
+
+**默认情况下，一旦施加力（Vector3.zero 力除外），刚体的状态就会被设置为唤醒。**
+
+- AddRelativeForce(Vector3 force, ForceMode mode = ForceMode.Force)
+
+- AddRelativeForce(float x, float y, float z, ForceMode mode = ForceMode.Force)
+
+作用力参考本地坐标系
+
+- AddForceAtPosition(Vector3 force, Vector3 position, ForceMode mode = ForceMode.Force)
+
+在 position 处施加 force。这将向对象施加扭矩和力。
+
+为了获得逼真的效果，position 应大致位于刚体表面范围内。 该函数最常用于实现爆炸效果。实现爆炸效果时，最好在数帧（而非一帧）中施加力。 注意，当 position 远离刚体中心时，施加的扭矩将大到失真。
+
+- public void AddExplosionForce (float explosionForce, Vector3 explosionPosition, float explosionRadius, float upwardsModifier= 0.0f, ForceMode mode= ForceMode.Force))
+
+|参数||
+|----|----|
+|explosionForce	|爆炸力（可以根据距离进行修改）。|
+|explosionPosition	|表示爆炸波及范围的球体的中心。|
+|explosionRadius	|表示爆炸波及范围的球体的半径。|
+|upwardsModifier	|调整爆炸的视位，呈现掀起物体的效果。|
+|mode	|用于将力施加到其目标的方法。|
+
+向模拟爆炸效果的刚体施加力。
+
+**爆炸被建模为一个在世界空间中具有特定中心位置和半径的球体**；通常情况下，球体外的任何对象都不会受到爆炸的影响，力与到中心的距离成反比。但是，**如果传递零值作为半径，则不管刚体距离中心多远，都将施加全部的力**。
+
+默认情况下，力的方向为从爆炸中心到刚体质心的直线。**如果为 upwardsModifier 参数传递非零值，则会对方向进行修改（从中心点的 Y 分量中减去该值）**。例如，您向 upwardsModifier 传递了值 2.0，则爆炸看似发生在其实际位置下方 2.0 单位处，并据此计算力方向（即，不修改效果的中心和半径）。您**可以使用该参数轻松实现将物体抛向空中的爆炸效果**，这通常比简单地施加向外的力更明显。
+
 ### 四元数
 
 #### 欧拉角与万向锁
@@ -429,7 +479,7 @@ transform.LookAt(target.transform);
 ```
 
 - public static Vector3 RotateTowards (Vector3 current, Vector3 target, float maxRadiansDelta, float maxMagnitudeDelta);
-- 
+
 返回Vector3 RotateTowards 生成的位置。
 
 current 向量将朝 target 方向旋转 maxRadiansDelta 的角度， **但其将准确地落在目标上而不会超过目标**。 如果 current 和 target 的大小不同，则在旋转期间对结果大小进行线性插值。 如果为 maxRadiansDelta **使用负值，则向量将朝远离 target 的方向旋转， 直到它指向完全相反的方向，然后停止**。
