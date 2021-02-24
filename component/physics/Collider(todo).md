@@ -116,6 +116,10 @@ https://zhuanlan.zhihu.com/p/113415779
 ### 碰撞检测的流程
 显然直接两两检测的复杂度是O(n^2)，所以要采取优化方案。分成两个部分，Broad-Phase、Narrow-Phase
 
+Broad-Phase使用某种Bounding Volume来表示刚体的碰撞信息,然后用空间划分的方式来保存这些Bounding Volume,就**可以在较短的时间内筛选出可能互相碰撞的刚体对.**
+
+Narrow-Phase就是将这些刚体对进行真正的碰撞检测.
+
 ### 简化碰撞边框
 
 使用Bounding Volume（包围体），常用的有AABB(axis-aligned bounding boxes)轴对齐包围盒, OBB(oriented bounding boxes)有向包围盒, Circle/Sphere。
@@ -195,6 +199,36 @@ Grid,BVH,BSP,Octree这些空间组织数据结构,不仅用在Broad-Phase碰撞�
 
 Narrow-Phase
 -----
+https://zhuanlan.zhihu.com/p/127844705
+### 碰撞检测
+
+- Separating Axis Theorem(SAT)算法
+
+SAT的原理:两个凸多边形不相交,当且仅当必然存在一条直线,两个凸多边形在这条直线上的投影不相交.或者描述为:两个凸多边形相交,则在所有直线上的投影都是相交的. 对于凸多面体也是一样的,只是投影在面上.
+
+SAT算法的一个缺点,就是只能适用于多边形/多面体,不能直接适用圆形/球形的物体.
+
+box2d中多边形之间的碰撞通过SAT算法来实现.
+
+- Gilbert-Johnson-Keerthi (GJK)算法
+
+chipmonk,bullet,physx中的碰撞都是通过GJK实现,box2d的CCD和部分碰撞检测也是通过GJK实现的,GJK是物理引擎中计算碰撞的主流方案
+
+- Expanding Polytope Algorithm(EPA)
+
+上面的GJK算法,我们算出了当两个物体不相交时的最近距离.当两个几何体相交时,GJK算法会终止退出.而在处理碰撞的时候,我们不仅要知道两个几何体是否相交,还要知道相交的穿透深度(penetration depth).当GJK的算法退出后,我们在GJK得到的单纯形的基础上使用EPA算法,就可以算出两个几何体的穿透深度.
+
+### Continuous Collision Detection(CCD)
+
+实际的物理引擎运行中,运动速度很快微小的物体可能出现无法计算到碰撞的隧穿(tunneling)情况.CCD尝试找到两个本来应该碰撞的几何体的碰撞时间time of impact(TOI),并回到那个时间点处理碰撞.
+
+### Collision Response 碰撞反馈
+
+碰撞反馈是一个非常复杂的问题，实际物理引擎中的碰撞，常作为一个约束来求解。
+
+约束
+-----
+https://zhuanlan.zhihu.com/p/143003234
 
 射线（Raycast）
 -----
