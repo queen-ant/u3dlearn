@@ -89,3 +89,68 @@
 可以模拟任意关节的效果。
 
 # 尝试1：实现弹弓效果
+<img src="https://s12.directupload.net/images/210226/zur3c9oj.png"></img>
+<img src="https://s16.directupload.net/images/210226/7xzmuwqa.png"></img>
+```
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class SlingShot : MonoBehaviour
+{
+    private bool isClick;
+    void Start()
+    {
+        isClick = false;
+
+        
+        Camera.main.transform.localPosition = new Vector3(0,0,-10);
+        Camera.main.transform.LookAt(Vector3.zero);
+    }
+
+    void OnMouseDown()
+    {
+        isClick = true;
+        GetComponent<Rigidbody>().isKinematic = true;
+    }
+
+    void OnMouseUp()
+    {
+        isClick = false;
+        GetComponent<Rigidbody>().isKinematic = false;
+        Invoke("Fly",0.1f);
+    }
+    void Fly()
+    {
+        SpringJoint[] sj = GetComponents<SpringJoint>();
+        sj[0].breakForce = 10;
+        sj[1].breakForce = 10;
+    }
+    void Update()
+    {
+        if(isClick)
+        {
+            transform.position = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y,Camera.main.WorldToScreenPoint(transform.position).z));
+            if(Mathf.Abs(Vector3.Angle(transform.right,-transform.position))>1)
+            {
+                transform.rotation *= Quaternion.FromToRotation(transform.right,-transform.position);
+            }
+           
+            Debug.Log(transform.right);
+        }
+    }
+
+    void FixedUpdate()
+    {
+        SpringJoint[] sj = GetComponents<SpringJoint>();
+        if(sj.Length==2)
+        {
+            Debug.DrawLine(transform.TransformPoint(sj[0].anchor),sj[0].connectedAnchor);
+            Debug.DrawLine(transform.TransformPoint(sj[1].anchor),sj[1].connectedAnchor);
+        }
+       
+    }
+
+}
+
+```
