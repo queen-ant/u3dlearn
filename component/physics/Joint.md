@@ -91,7 +91,7 @@
 # 尝试1：实现弹弓效果
 <img src="https://s12.directupload.net/images/210226/zur3c9oj.png"></img>
 <img src="https://s16.directupload.net/images/210226/7xzmuwqa.png"></img>
-```
+```C#
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -102,7 +102,6 @@ public class SlingShot : MonoBehaviour
     void Start()
     {
         isClick = false;
-
         
         Camera.main.transform.localPosition = new Vector3(0,0,-10);
         Camera.main.transform.LookAt(Vector3.zero);
