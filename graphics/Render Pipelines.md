@@ -1,0 +1,162 @@
+# 渲染管线
+
+在 Unity 中，可以选择不同的渲染管线。渲染管线执行一系列操作来获取场景的内容，并将这些内容显示在屏幕上。概括来说，这些操作如下：
+- 剔除
+- 渲染
+- 后期处理
+
+将项目从一个渲染管线切换到另一个渲染管线可能很困难，因为不同的渲染管线使用不同的着色器输出，并且可能没有相同的特性。因此，必须要了解 Unity 提供的不同渲染管线，以便可以在开发早期为项目做出正确决定。
+
+Unity 提供以下渲染管线：
+
+- 内置渲染管线是 Unity 的默认渲染管线。这是通用的渲染管线，其自定义选项有限。
+- 通用渲染管线 (URP) 是一种可快速轻松自定义的可编程渲染管线，允许您在各种平台上创建优化的图形。
+- 高清渲染管线 (HDRP) 是一种可编程渲染管线，可让您在高端平台上创建出色的高保真图形。
+- 可以使用 Unity 的可编程渲染管线 API 来创建自定义的可编程渲染管线 (SRP)。这个过程可以从头开始，也可以修改 URP 或 HDRP 来适应具体需求。
+
+## 内置渲染管线
+
+Unity 的内置渲染管线是通用渲染管线。
+
+内置渲染管线在自定义扩展方面比可编程渲染管线受到的限制更多，但是您**可以在不同的渲染路径之间进行选择，并通过命令缓冲区和回调来扩展其功能。**
+
+## 内置渲染管线中的渲染路径
+
+渲染路径是与光照和阴影相关的一系列操作。
+
+使用 Graphics 设置（主菜单：Edit > Project Settings，然后选择 Graphics 类别）可应用全局图形设置。
+
+如果运行项目的设备上的 GPU 不支持所选的渲染路径，则 Unity 将自动使用较低保真度的渲染路径。例如，在无法处理延迟着色的 GPU 上，Unity 使用前向渲染。
+
+### Scriptable Render Pipeline Settings
+
+此处可以定义一系列命令来精确控制场景的渲染方式（而不是使用 Unity 提供的默认渲染管线）。有关此功能的更多信息，请参阅可编程渲染管线 (Scriptable Render Pipeline) 包文档。https://docs.unity3d.com/Packages/com.unity.render-pipelines.core@latest
+
+### Camera Settings
+|属性	|功能|
+|----|----|
+|Transparency Sort Mode	|定义按对象在特定轴上的距离渲染对象的顺序。Unity 中的渲染器按几个条件排序，例如图层编号或与摄像机的距离。这通常仅适用于 2D 开发；例如，按高度或沿 Y 轴来对精灵进行排序。|
+|-Default	|根据摄像机模式将对象进行排序。|
+|-Perspective	|根据透视图将对象进行排序。|
+|-Orthographic	|根据正交视图将对象进行排序。|
+|-Custom Axis	|根据使用 Transparency Sort Axis 定义的排序模式来排序对象。|
+|Transparency Sort Axis |自定义 __透明度排序模式 (Transparency Sort Mode)__ 。|
+
+### Tier Settings
+使用这些设置，可以通过调整内置定义来对渲染和着色器编译进行特定于平台的调整。例如，可以使用此功能在高端 iOS 设备上启用级联阴影，但在低端设备上禁用级联阴影以便提高性能。层由 Rendering.GraphicsTier 定义。
+
+|属性	|功能|
+|----|----|
+|Standard Shader Quality	|将标准着色器 (Standard Shader) 的质量设置为 High、Medium 或 Low。|
+|Reflection Probes Box Projection	|为反射探针上的反射 UV 贴图启用投影。|
+|Reflection Probes Blending	|启用反射探针上的混合。|
+|Detail Normal Map	|启用细节法线贴图 (Detail Normal Map) 采样（如果已分配）。|
+|Enable Semitransparent Shadows	|启用半透明阴影。此选项可添加或删除 UNITY_USE_DITHER_MASK_FOR_ALPHABLENDED_SHADOWS 着色器编译器定义。|
+|Enable Light Probe Proxy Volume	|允许渲染插值光照探针的 3D 网格。|
+|Cascaded Shadows	|启用级联阴影贴图。此选项可添加或删除 UNITY_NO_SCREENSPACE_SHADOWS 着色器编译器定义。|
+|Prefer 32 bit shadow maps	|目标设备是 PS4 或使用 DX11 或 DX12 的平台时，启用 32 位浮点阴影贴图。大多数平台采用的是定点阴影贴图格式，无法进行调整。这些平台的格式多种多样，可以是 16 位、24 位或 32 位，也可以基于浮点数或整数。32 位阴影贴图提供的阴影质量要高于 16 位阴影贴图，但会在 GPU 上占用更多的内存和带宽。|注意：要使用 32 位阴影贴图，请确保深度缓冲区也设置为 32 位。|
+|Use HDR	|为此层启用高动态范围渲染。|
+|HDR Mode	|选择为当前图形层启用 HDR 时用于 HDR 缓冲区的格式。默认情况下，此设置为 FP16。|
+|-FP16	|颜色渲染纹理格式，每通道 16 位浮点值。|
+|-R11G11B10	|颜色渲染纹理格式。R 和 G 通道为 11 位浮点值，B 通道为 10 位浮点值。|
+|Rendering Path	|选择 Unity 应如何渲染图形。不同的渲染路径会影响游戏的性能以及光照和阴影的计算方式。有些路径比其他路径更适合不同的平台和硬件。使用正交投影时不支持_延迟 (Deferred)_ 渲染。如果摄像机的投影模式设置为正交模式，则会覆盖这些值，并且摄像机始终使用_前向 (Forward)_ 渲染。有关更多信息，请参阅渲染路径。|
+|-Forward	|传统的渲染路径。此渲染路径支持所有典型的 Unity 图形功能（法线贴图、每像素光照、阴影等）。但是，在默认设置下，仅少量最亮的光线才在每像素光照模式下渲染。其余光线是在对象顶点上或每个对象上计算的。|
+|-Deferred	|延迟着色具有最大光照和阴影保真度，最适合有许多实时光源的情况。此渲染路径需要一定程度的硬件支持。|
+|-Legacy Vertex Lit	|旧版顶点光照 (Legacy Vertex Lit) 是具有最低光照保真度且不支持实时阴影的渲染路径。它是_前向 (Forward)_ 渲染路径的一个子集。|
+|-Legacy Deferred (light prepass)	|旧版延迟 (Light Prepass) 类似于延迟着色，只是采用不同的技术并进行不同的折中。不支持 Unity 5 基于物理的标准着色器。|
+|Realtime Global Illumination CPU Usage	|选择在运行时为最终光照计算分配多少 CPU 使用率。增加此值会加快系统对光照更改的反应速度，成本是使用更多 CPU 时间。注意：某些平台允许工作线程占用所有 CPU，而某些平台强制采用最大值。例如，Xbox One 和 PS4 最多允许 4 个 CPU 核心。对于 Android 设备，如果是 bigLittle 架构，则仅使用小 CPU；否则最大值为 CPU 总数减去一。
+|-Low	|将可用 CPU 线程的 25% 用作工作线程。|
+|-Medium	|将可用 CPU 线程的 50% 用作工作线程。|
+|-High	|将可用 CPU 线程的 75% 用作工作线程。|
+|-Unlimited	|将可用 CPU 线程的 100% 用作工作线程。|
+
+### Built-in shader settings
+使用这些设置可指定要用于每个列出的内置功能的着色器。
+
+|渲染路径	|要使用的着色器|
+|----|----|
+|Deferred	|与延迟着色结合使用。|
+|Deferred Reflection	|与反射探针及延迟光照结合使用。|
+|Screen Space shadows	|与 PC/游戏主机平台上的方向光的级联阴影贴图结合使用。|
+|Legacy deferred	|与旧版延迟光照结合使用。|
+|Motion vectors	|用于基于对象的运动矢量计算。|
+|Lens Flare	|与镜头光晕结合使用。|
+|Light Halo	|与光环结合使用。|
+
+对于每个功能，可以选择要使用的着色器类型：
+- No Support 禁用此计算。如果不使用延迟着色或光照，请使用此设置。这样可以节省构建的游戏数据文件中的一些空间。
+- Built-in Shader 使用 Unity 的内置着色器进行计算。此为默认值。
+- Custom Shader 使用自己的兼容着色器进行计算。这样可以对延迟渲染进行深度自定义。
+
+选择 Custom shader 时，在特征属性下方会出现 Shader 参考属性，您可以在此处设置对需要使用的着色器的引用。
+
+### Always-included Shaders
+指定始终与项目一起存储（即使场景中没有任何对象实际使用这些着色器）的着色器列表。应将流式 AssetBundles 使用的着色器添加到此列表中来确保可以访问这些着色器，这一点非常重要。
+
+要将着色器添加到此列表，请增大 Size 属性中的值。
+
+要删除列表中的最后一个着色器，请减小 Size 属性的值。
+
+要删除不是列表中最后一个着色器的着色器，可将值设置为 None。
+
+### Shader stripping
+通过剥离某些着色器，降低构建数据大小并缩短加载时间。
+
+#### 着色器变体（Shader variants）
+在写shader时，往往会在shader中定义多个宏，并在shader代码中控制开启宏或关闭宏时物体的渲染过程。
+
+最终编译的时候也是根据这些不同的宏来编译生成多种组合形式的shader源码。其中每一种组合就是这个shader的一个变体(Variant)。
+
+默认情况下，Unity 会查看场景和光照贴图设置来确定未使用的雾效和光照贴图模式，并跳过对应的着色器变体。
+
+但是，如果要构建 Asset Bundles，则可选择特定模式，以确保包含要使用的模式。
+
+#### 光照贴图（Lightmap modes）
+默认情况下，__Lightmap modes__ 属性默认为 __Automatic__，这意味着由 Unity 决定跳过哪些着色器变体。
+
+若要自己指定使用的模式，请将此属性更改为 Custom 并启用或禁用以下光照贴图模式：
+
+- Baked Non-Directional
+- Baked Directional
+- Realtime Non-Directional
+- Realtime Directional
+- Baked Shadowmask
+- Baked Subtractive
+
+#### 雾效（Fog modes）
+默认情况下，__Fog Modes__ 属性默认为 __Automatic__，这意味着由 Unity 决定跳过哪些着色器变体。
+
+若要自己指定使用的模式，请将此属性更改为 Custom 并启用或禁用以下雾模式：
+
+- Linear
+- Exponential
+- Exponential Squared
+
+#### 实例化着色器变体
+如果未在场景中的任何游戏对象上启用 GPU 实例化，Unity 会剥离实例化变体。可以使用 Instancing Variants 属性覆盖默认的剥离行为。
+
+|值	|描述|
+|----|----|
+|Strip Unused（默认值）| Unity 构建项目时，仅当至少有一个引用着色器的材质启用了 Enable instancing 复选框的情况下，才会包含实例化着色器变体。Unity 会剥离禁用了 Enable instancing 的材质未引用的着色器。|
+|Strip All	|剥离所有实例化着色器变体，即使它们正在被使用。|
+|Keep All	|保留所有实例化着色器变体，即使它们未被使用。|
+
+### Shader preloading
+指定要在加载游戏时预加载的着色器变体集合资源的列表。此列表中指定的着色器变体会在应用程序的整个生命周期内加载。可使用此属性来预加载使用频率极高的着色器。有关详细信息，请参阅优化着色器加载时间页面。
+
+要将着色器变体集合添加到此列表，请增大 Size 属性中的值。
+
+## 前向渲染
+前向渲染是内置渲染管线中的默认渲染路径。这是通用的渲染路径。
+
+采用前向渲染方式渲染实时光源会非常消耗资源。为了抵消此成本，可以选择 Unity 在任何一个时间应该为每个像素渲染的光源数量。Unity 会以较低保真度渲染场景中的其余光源：每个顶点或每个对象。
+
+如果项目没有使用大量实时光源，或者光照保真度对项目而言不重要，则此渲染路径可能是这个项目的不错选择。
+
+## GPU 实例化
+
+使用 GPU 实例化可使用少量绘制调用一次绘制（或渲染）同一网格的多个副本。它对于绘制诸如建筑物、树木和草地之类的**在场景中重复出现的对象非常有用。**
+
+GPU 实例化在每次绘制调用时仅渲染相同的网格，**但每个实例可以具有不同的参数（例如，颜色或比例）以增加变化并减少外观上的重复。**
+
+GPU 实例化可以降低每个场景使用的绘制调用数量。可以显著提高项目的渲染性能。
