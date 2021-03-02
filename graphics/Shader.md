@@ -23,7 +23,7 @@
 - 片元shader（Fragment Shader） 可编程，选择实现
 - 逐片元操作(Per-Fragment Operations) 不可编程、可配置
 
-最终产生像素
+最终产生像素，构成屏幕图像
 
 # 渲染过程（硬件）
 ## CPU
