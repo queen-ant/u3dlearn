@@ -2,8 +2,6 @@
 =======
 角色控制器 (Character Controller) 主要用于第三人称玩家控制或者是不使用 __刚体__ 物理组件的第一人称玩家控制。
 
-![](http://latex.codecogs.com/svg.latex?\\sum_{i=0}^n)
-
 属性
 ------
 |属性：	|功能：|
