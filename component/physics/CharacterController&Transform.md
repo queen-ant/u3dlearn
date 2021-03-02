@@ -155,27 +155,29 @@ iOS 和 Android 设备能够跟踪多根手指同时触摸屏幕的操作。 您
 ### 坐标系种类
 Unity 中使用到的坐标系分为以下四种
 
-- 世界坐标系 Word Space
+- 世界空间 Word Space
 
-即世界空间使用的坐标系，基本单位 unit，x 正方向：左向右， y 正方向：下向上，z 正方向：屏外向屏内。
+即世界空间使用的坐标系，基本单位 unit，x 正方向：左向右， y 正方向：下向上，z 正方向：屏外向屏内。**是左手坐标系。**
 
 任何物体使用 Transform.position 即可获得世界坐标值。
 
 场景中根物体使用的就是世界坐标，可在 Inspector 查看世界坐标值。
 
-**对于非根物体则以父物体位置为原点位置使用本地坐标系 Local Space，即相对父物体位置，该物体 Inspector 数值为本地坐标值，可使用 Transform.localposition 获取本地坐标值**
+**对于非根物体则以父物体位置为原点位置使用本地坐标系 Local Space（也是左手系），即相对父物体位置，该物体 Inspector 数值为本地坐标值，可使用 Transform.localposition 获取本地坐标值**
 
-- 屏幕坐标系 Screen Space
+- 观察空间 View Space
 
-基本单位像素，屏幕左下角为（0，0），右上角为（Screen.width，Screen.height），即实际运行屏幕下的游戏窗口像素值，z 为相机世界坐标单位值。
-
-Input.mousePosition 获取的鼠标坐标，Input.GetTouch(0).position 获取触摸坐标。
-
-- 视口坐标系 Viewport Space
+**是右手系，即z轴指向后方。**
 
 左下角为（0，0），右上角为（1，1），z 为相机世界坐标单位值。
 
 适合用于坐标系转换。
+
+- 屏幕空间 Screen Space
+
+基本单位像素，屏幕左下角为（0，0），右上角为（Screen.width，Screen.height），即实际运行屏幕下的游戏窗口像素值，是二维坐标空间。
+
+Input.mousePosition 获取的鼠标坐标，Input.GetTouch(0).position 获取触摸坐标。
 
 - UGUI 坐标系 UGUI Space
 
@@ -191,17 +193,21 @@ TransformVector
 transform.InverseTransformPoint(position);
 // 世界→屏幕  
 camera.WorldToScreenPoint(position);  
-// 世界→视口  
+// 世界→观察  
 Camera.main.WorldToViewportPoint(position)
-// 屏幕→视口  
+// 屏幕→观察 
 camera.ScreenToViewportPoint(position);
-// 视口→屏幕  
+// 观察→屏幕  
 camera.ViewportToScreenPoint(position);
-// 视口→世界  
+// 观察→世界  
 camera.ViewportToWorldPoint(position);
 ```
+**本地空间到屏幕空间的过程：本地->世界->观察->判断是否在视锥体内（变换到裁剪空间）->屏幕**
+
 空间变换
 -----
+**变换的顺序是缩放、旋转、平移。旋转顺序是zxy**
+
 **Vector3.forward、Vector3.back、Vector3.left、Vector3.right、Vector3.up、Vector3.down 数值是固定的，而transform.forward、 transform.right、transform.up 数值不定，依据物体自身旋转变化，如 transform.forward 为物体 z 轴在世界坐标系中所指方向。**
 
 ### 非刚体平移
