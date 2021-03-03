@@ -9,43 +9,42 @@
 ## 几何阶段
 主要工作是把顶点信息从local space转换到screen space
 
-- 顶点shader（Vertex Shader） 可编程，必须实现
+- 顶点shader（Vertex Shader） *可编程，必须实现*
 
 工作：顶点变换（变换到裁剪空间）、顶点着色（逐顶点光照）
 
-- 曲面细分shader（Tessellation Shader） 可编程，选择实现
+- 曲面细分shader（Tessellation Shader） *可编程，选择实现*
 
 工作：细分图元
 
-- 几何shader（Geometry Shader） 可编程，选择实现
+- 几何shader（Geometry Shader） *可编程，选择实现*
 
 工作：逐图元操作或生成更多图元
 
-- 裁剪（Clipping） 不可编程、可配置
+- 裁剪（Clipping） *不可编程、可配置*
 
 工作：在裁剪空间内对视椎体内的场景进行裁剪，通过透视除法得到归一化的设备坐标（Normalized Device Coordinates ，NDC）
 
-- 屏幕映射（Screen Mapping） 不可编程、不可配置
+- 屏幕映射（Screen Mapping） *不可编程、不可配置*
 
 工作：将顶点从裁剪空间映射到屏幕空间
 
 最终输出顶点信息
 
 ## 光栅化阶段
-- 三角形设置（Triangle Setup） 不可编程、不可配置
+- 三角形设置（Triangle Setup） *不可编程、不可配置*
 
 工作：根据顶点信息进行插值计算出三角形的边
 
-- 三角形遍历（Triangle Traversal） 不可编程、不可配置
+- 三角形遍历（Triangle Traversal） *不可编程、不可配置*
 
-工作：也被称为扫描变换（Scan Conversion）。查找被三角形覆盖的像素，根据顶点信息（如深度信息）对被覆盖的像素进行插值，生成片元，最终输出片元序列。片元状态包括了（但不限于）像素的屏幕坐标、深
-度信息，以及其他从几何阶段输出的顶点信息，例如法线、纹理坐标等。
+工作：也被称为扫描变换（Scan Conversion）。查找被三角形覆盖的像素，根据顶点信息（如深度信息）对被覆盖的像素进行插值，生成片元，最终输出片元序列。片元状态包括了（但不限于）像素的屏幕坐标、深度信息，以及其他从几何阶段输出的顶点信息，例如法线、纹理坐标等。
 
-- 片元shader（Fragment Shader） 可编程，选择实现
+- 片元shader（Fragment Shader） *可编程，选择实现*
 
 工作：计算片元的着色，输出是一个或者多个颜色值。这一阶段可以完成很多重要的渲染技术，其中最重要的技术之一就是纹理采样。
 
-- 逐片元操作(Per-Fragment Operations) 不可编程、可配置
+- 逐片元操作(Per-Fragment Operations) *不可编程、可配置*
 
 工作：模板测试、深度测试，决定片元的可见性。混合，输出颜色缓冲区作为最终效果，包含双重缓冲技术。
 
