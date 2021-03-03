@@ -67,13 +67,13 @@ GPU收到draw call之后工作
 
 # ShaderLab
 ## 结构
-- 名字
+### 名字
 
 ```C
 Shader "MyShader/Name"{}
 ```
 
-- Properties
+### Properties
 
 ```C
 Shader "MyShader/Name"
@@ -95,6 +95,8 @@ Shader "MyShader/Name"
   FallBack "Diffuse"
 }
 ```
+
+### SubShader
 - Tag
 
 Tag是键值对，键值都是字符串类型
@@ -123,7 +125,7 @@ ZWrite 是否开启深度写入。值：On ｜ Off，开启/关闭。
 Blend 混合模式。值：SrcFactor DstFactor，开启并设置混合模式
 ```
 - Pass
-- 
+
 一样有Name，Tag，RenderSetup
 
 **特殊Pass，UsePass "MyShader/MYPASSNAME"可以调用其他shader中的Pass，因为Unity会把Pass的名字全部转换为大写，所以使用UsePass时要使用大写名字。**
@@ -136,4 +138,11 @@ Blend 混合模式。值：SrcFactor DstFactor，开启并设置混合模式
 ```C
 {"LightMode"} //设置Pass在渲染流水线中的角色
 {"RequirOption"} //达到某种条件后才渲染该Pass
+```
+### FallBack
+
+当所有SubShader都不能支持时，使用FallBack给定的shader
+```C
+FallBack "name"
+//关闭 FallBack Off
 ```
