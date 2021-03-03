@@ -62,3 +62,78 @@ GPU收到draw call之后工作
 ## GPU
 - 几何阶段
 - 光栅化阶段
+
+# Unity Shader模板
+
+# ShaderLab
+## 结构
+- 名字
+
+```C
+Shader "MyShader/Name"{}
+```
+
+- Properties
+
+```C
+Shader "MyShader/Name"
+{
+  Properties
+  {
+    // Numbers and Sliders
+    _Int ("Int", Int) = 2
+    _Float ("Float", Float) = 1.5
+    _Range("Range", Range(0.0, 5.0)) = 3.0
+    // Colors and Vectors
+    _Color ("Color", Color) = (1,1,1,1)
+    _Vector ("Vector", Vector) = (2, 3, 6, 1)
+    // Textures
+    _2D ("2D", 2D) = "" {}
+    _Cube ("Cube", Cube) = "white" {}
+    _3D ("3D", 3D) = "black" {}
+  }
+  FallBack "Diffuse"
+}
+```
+- Tag
+
+Tag是键值对，键值都是字符串类型
+
+Tags { "TagName1" = "Value1" "TagName2" = "Value2" }
+
+类型：
+```C
+{"Queue"} //控制渲染队列
+{"RenderType"} //对着色器分类
+{"DisableBatching"} //关闭批处理
+{"ForceNoShadowCasting"} //禁止投射阴影
+{"IgnoreProjector"} //忽略projector
+{"CanUseSpriteAtlas"} //是否用于精灵图
+{"PreviewType"} //面板预览类型
+
+//上述标签仅可以在SubShader 中声明，而不可以在Pass块中声明
+```
+- RenderSetup（渲染状态设置）
+
+这些指令可以设置显卡的各种状态
+```
+Cull 剔除。值：Back ｜ Front｜ Off，剔除背面/正面/关闭剔除。
+ZTest 深度测试模式。值：Less Greater｜ LEqual｜ GEqual｜ Equal｜ NotEqual｜ Always，设置深度测试时使用的函数
+ZWrite 是否开启深度写入。值：On ｜ Off，开启/关闭。
+Blend 混合模式。值：SrcFactor DstFactor，开启并设置混合模式
+```
+- Pass
+- 
+一样有Name，Tag，RenderSetup
+
+**特殊Pass，UsePass "MyShader/MYPASSNAME"可以调用其他shader中的Pass，因为Unity会把Pass的名字全部转换为大写，所以使用UsePass时要使用大写名字。**
+
+**特殊Pass还有GrabPass，该Pass负责抓取屏幕并将结果存储在一张纹理中，以用于后续的Pass处理。**
+
+对于RenderSetup，除了上面提到的状态设置外，在Pass中我们还可以使用固定管线的着色器命令。
+
+对于Tag，在Pass中不能使用上面提到的类型，有独特的类型：
+```C
+{"LightMode"} //设置Pass在渲染流水线中的角色
+{"RequirOption"} //达到某种条件后才渲染该Pass
+```
