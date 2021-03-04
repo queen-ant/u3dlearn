@@ -218,7 +218,7 @@ samplerCUBE_float _Cubemap;
 ```
 
 ## 精度、硬件支持和性能
-**PC的GPU始终为高精度。**也就是说，对于所有 PC (Windows/Mac/Linux) GPU，在着色器中编写 float、half 还是 fixed 数据类型都无关紧要。这些 GPU 将始终以 32 位浮点精度来计算所有数据。
+**PC的GPU始终为高精度**。也就是说，对于所有 PC (Windows/Mac/Linux) GPU，在着色器中编写 float、half 还是 fixed 数据类型都无关紧要。这些 GPU 将始终以 32 位浮点精度来计算所有数据。
 
 仅当目标平台是移动端 GPU 时，half 和 fixed 类型才变得重要，在这种情况下，这些类型主要面临功耗（有时候是性能）约束。请记住，要确认是否遇到精度/数值问题，必须在移动设备上测试着色器。
 
