@@ -146,3 +146,27 @@ Blend 混合模式。值：SrcFactor DstFactor，开启并设置混合模式
 FallBack "name"
 //关闭 FallBack Off
 ```
+
+# 矩阵相关英文名称
+- model space、object space、local space
+
+- world space
+
+顶点从model space到world space叫model transform
+
+- view space、camera space
+
+从观察空间到屏幕空间的转换需要经过一个投影操作 （projection）
+
+从world space到view space叫view transform
+
+- clip space
+
+projection matrix、clip matrix，把view space转换到clip space
+
+- screen space
+
+homogeneous division、perspective division，{x,y,z,w}齐次除法后的坐标为{x/w,y/w,z/w,1}，这一步得到的坐标叫做归一化的设备坐标 （Normalized Device Coordinates，NDC）
+
+屏幕坐标x0 = (x/w+1)\*pWidth/2，y0 = (y/w+1)\*pHeight/2。pWidth、pHeight为屏幕像素宽、高。
+ 
