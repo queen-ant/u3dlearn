@@ -225,6 +225,9 @@ samplerCUBE_float _Cubemap;
 fixed精度实际上只在一些较旧的移动平台上有用，**在大多数现代的GPU上，它们内部把fixed和half当成同等精度来对待。**
 
 # 语义
+
+## 从应用阶段 输入模型数据 给顶点着色器时 Unity支持的常用语义
+
 - POSITION（float4），模型空间中的顶点位置
 
 - TANGENT（float4）、NORMAL（float3）的范围是[-1,1]
@@ -236,6 +239,16 @@ fixed精度实际上只在一些较旧的移动平台上有用，**在大多数�
 该顶点的纹理坐标，TEXCOORD0表示第一组纹理坐标，依此类推。通常是float2或float4类型
 
 TEXCOORDn 中n 的数目是和Shader Model有关
+
+## 从顶点着色器 输入数据 给片元着色器时 Unity使用的常用语义
+
+- SV_POSITION，裁剪空间中的顶点坐标，结构体中必须包含一个用该语义修饰的变量
+- COLOR0、COLOR1，通常用于输出第一、二组顶点颜色，但不是必需的
+- TEXCOORD0~TEXCOORD7，通常用于输出纹理坐标，但不是必需的
+
+## 片元着色器 输出 时Unity支持的常用语义
+
+- SV_Target，输出值将会存储到渲染目标（render target）中。
 
 # 跨平台差异
 
