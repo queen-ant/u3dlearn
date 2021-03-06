@@ -169,7 +169,7 @@ projection matrix、clip matrix，把view space转换到clip space
 homogeneous division、perspective division，clip space中的坐标{x,y,z,w}经过齐次除法后的坐标为{x/w,y/w,z/w,1}，这一步得到的坐标叫做归一化的设备坐标 （Normalized Device Coordinates，NDC）
 
 屏幕坐标x0 = (x/w+1)\*pWidth/2，y0 = (y/w+1)\*pHeight/2。pWidth、pHeight为屏幕像素宽、高。
- 
+
 # 基本数据类型
 
 着色器中的大多数计算是对浮点数（在 C# 等常规编程语言中为 float）进行的。浮点类型有几种变体：float、half 和 fixed（以及它们的矢量/矩阵变体，比如 half3 和 float4x4）。这些类型的精度不同（因此性能或功耗也不同）：
@@ -239,13 +239,33 @@ fixed精度实际上只在一些较旧的移动平台上有用，**在大多数�
 该顶点的纹理坐标，TEXCOORD0表示第一组纹理坐标，依此类推。通常是float2或float4类型
 
 TEXCOORDn 中n 的数目是和Shader Model有关
-
+```
+struct appdata_full {
+    float4 vertex : POSITION;
+    float4 tangent : TANGENT;
+    float3 normal : NORMAL;
+    float4 texcoord : TEXCOORD0;
+    float4 texcoord1 : TEXCOORD1;
+    float4 texcoord2 : TEXCOORD2;
+    float4 texcoord3 : TEXCOORD3;
+    fixed4 color : COLOR;
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+};
+```
 ## 从顶点着色器（的输出） 输入数据 给片元着色器时 Unity使用的常用语义
 
 - SV_POSITION，裁剪空间中的顶点坐标，结构体中必须包含一个用该语义修饰的变量
 - COLOR0、COLOR1，通常用于输出第一、二组顶点颜色，但不是必需的
 - TEXCOORD0~TEXCOORD7，通常用于输出纹理坐标，但不是必需的
-
+```
+struct v2f {
+  float4 pos: SV_POSITION;
+  float3 worldNormal: TEXCOORD0;
+  float3 worldPosition: TEXCOORD1;
+  float2 uv:TEXCOORD2;
+  fixed3 color: COLOR0;
+};
+```
 ## 片元着色器 输出 时Unity支持的常用语义
 
 - SV_Target，输出值将会存储到渲染目标（render target）中。
@@ -273,8 +293,7 @@ void vert (inout appdata_full v, out Input o) {
 
 - DirectX 9 / 11也不支持在顶点着色器中使用tex2D函数。
 
-tex2D是一个对纹理进行采样的函数，如果我们的确需要在顶点着色器中访问纹
-理，需要使用tex2Dlod函数来替代。
+tex2D是一个对纹理进行采样的函数，如果我们的确需要在顶点着色器中访问纹理，需要使用tex2Dlod函数来替代。
 
 ## Shader语义有差异
 
@@ -376,19 +395,19 @@ object space到world space的变换矩阵
 
 - inline float3 UnityWorldSpaceViewDir( in float3 worldPos )
 
-返回world space中点到camera的方向，无normalize
+返回world space中点到camera的方向，**无normalize**
 
 - inline float3 ObjSpaceViewDir( in float4 v )
 
-返回object space中点到camera的方向，无normalize
+返回object space中点到camera的方向，**无normalize**
 
 - inline float3 UnityWorldSpaceLightDir( in float3 worldPos )
 
-**仅可用于前向渲染中**。返回world space中从该点到光源的光照方向，已处理不同的光源类型。无normalize。
+**仅可用于前向渲染中**。返回world space中从该点到光源的光照方向，已处理不同的光源类型。**无normalize**。
 
 - inline float3 ObjSpaceLightDir( in float4 v )
 
-**仅可用于前向渲染中**。返回object space中从该点到光源的光照方向，已处理不同的光源类型。无normalize。
+**仅可用于前向渲染中**。返回object space中从该点到光源的光照方向，已处理不同的光源类型。**无normalize**。
 
 - inline float3 UnityObjectToWorldNormal( in float3 norm )
 
@@ -401,3 +420,21 @@ object space到world space的变换矩阵
 - inline float4 UnityWorldToClipPos( in float3 pos )
 
 将位置矢量从world space变换到clip space
+
+- #define TRANSFORM_TEX(tex,name) (tex.xy \* name##\_ST.xy + name##\_ST.zw)
+
+对顶点纹理坐标以缩放和偏移量进行变换得到uv坐标
+
+# 基础纹理
+
+## 反射率计算
+
+`fixed3 albedo = tex2D(_MainTex,i.uv)*_Color.rgb;`
+
+运用于漫反射和环境光
+`fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.xyz*albedo;`
+`fixed3 diffuse = _LightColor0.rgb * albedo*saturate(dot(i.wNormal,lightDir));`
+
+## Wrap Mode
+Wrap Mode 决定了当纹理坐标超过[0, 1]范围后将会如何被平铺
+
