@@ -365,11 +365,39 @@ BRDF（Bidirectional Reflectance Distribution Function）分类：
 
 # UnityCG.cginc
 
-- unity_ObjectToWorld
+- \_WorldSpaceCameraPos
+
+摄像机world space坐标
+
+- unity_ObjectToWorld、unity_WorldToObject
 
 object space到world space的变换矩阵
 `float3 worldPos = mul(unity_ObjectToWorld, localPos).xyz;`
 
 - inline float3 UnityWorldSpaceViewDir( in float3 worldPos )
 
-world space中点到camera的方向，无normalize
+返回world space中点到camera的方向，无normalize
+
+- inline float3 ObjSpaceViewDir( in float4 v )
+
+返回object space中点到camera的方向，无normalize
+
+- inline float3 UnityWorldSpaceLightDir( in float3 worldPos )
+
+**仅可用于前向渲染中**。返回world space中从该点到光源的光照方向，已处理不同的光源类型。无normalize。
+
+- inline float3 ObjSpaceLightDir( in float4 v )
+
+**仅可用于前向渲染中**。返回object space中从该点到光源的光照方向，已处理不同的光源类型。无normalize。
+
+- inline float3 UnityObjectToWorldNormal( in float3 norm )
+
+将法线从object space变换到world space
+
+- inline float3 UnityObjectToWorldDir( in float3 dir )、UnityWorldToObjectDir
+
+将方向矢量从object space变换到world space
+
+- inline float4 UnityWorldToClipPos( in float3 pos )
+
+将位置矢量从world space变换到clip space
