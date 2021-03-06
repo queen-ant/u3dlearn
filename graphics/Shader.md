@@ -362,3 +362,14 @@ BRDF（Bidirectional Reflectance Distribution Function）分类：
 光源颜色\*高光反射颜色\*(Max(0,Dot(表面法线，normalized(顶点到摄像机方向+顶点到光源方向))))^光泽度
 
 **Blinn模型的夹角大小是Phong模型的一半**
+
+# UnityCG.cginc
+
+- unity_ObjectToWorld
+
+object space到world space的变换矩阵
+`float3 worldPos = mul(unity_ObjectToWorld, localPos).xyz;`
+
+- inline float3 UnityWorldSpaceViewDir( in float3 worldPos )
+
+world space中点到camera的方向，无normalize
