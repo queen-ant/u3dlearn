@@ -428,7 +428,9 @@ object space到world space的变换矩阵
 对顶点纹理坐标以缩放和偏移量进行变换得到uv坐标
 
 - inline fixed3 UnpackNormal(fixed4 packednormal)
+
 从采样中求解法线，需要将纹理类型设置成Normal Map
+
 ```
 inline fixed3 UnpackNormal(fixed4 packednormal)
 {
@@ -462,7 +464,9 @@ fixed4 tex2D(sampler2D Tex,float2 uv)
 `fixed3 albedo = tex2D(_MainTex,i.uv).rgb*_Color.rgb;`
 
 运用于漫反射和环境光
+
 `fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.xyz*albedo;`
+
 `fixed3 diffuse = _LightColor0.rgb * albedo*saturate(dot(i.wNormal,lightDir));`
 
 ## \_TexName\_ST属性
@@ -508,7 +512,9 @@ Point、 Bilinear、Trilinear，质量依次提升。会影响多级渐远纹理
 tex2D采样只能得到二维坐标xy，由于切线空间中法线总是正方向，所以z坐标可以直接由xy求得。
 
 - inline fixed3 UnpackNormal(fixed4 packednormal)
+
 从采样中求解法线，需要将纹理类型设置成Normal Map
+
 ```
 inline fixed3 UnpackNormal(fixed4 packednormal)
 {
@@ -521,7 +527,6 @@ inline fixed3 UnpackNormal(fixed4 packednormal)
 
 fixed3 tNormal = UnpackNormal(tex2D(_BumpTex,i.uv));
 ```
-
 - 副切线的计算需要乘v.tangent.w，因为OpenGL和DirectX的uv坐标v轴是相反的
 
 `fixed3 wBiTangent = cross(wNormal,wTangent.xyz)*v.tangent.w;`
@@ -529,7 +534,9 @@ fixed3 tNormal = UnpackNormal(tex2D(_BumpTex,i.uv));
 - 切线空间的好处
 
 1、切线空间记录的是相对法线信息，所以可以使用在不同的网格上
+
 2、可进行uv动画
+
 3、可压缩（只需储存xy）
 
 - 切线空间到世界空间的变换矩阵
