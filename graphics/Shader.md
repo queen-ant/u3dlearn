@@ -252,6 +252,8 @@ struct appdata_full {
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 ```
+**只有normal是float3，其他都是4**
+
 ## 从顶点着色器（的输出） 输入数据 给片元着色器时 Unity使用的常用语义
 
 - SV_POSITION，裁剪空间中的顶点坐标，结构体中必须包含一个用该语义修饰的变量
@@ -425,16 +427,141 @@ object space到world space的变换矩阵
 
 对顶点纹理坐标以缩放和偏移量进行变换得到uv坐标
 
+- inline fixed3 UnpackNormal(fixed4 packednormal)
+从采样中求解法线，需要将纹理类型设置成Normal Map
+```
+inline fixed3 UnpackNormal(fixed4 packednormal)
+{
+#if defined(UNITY_NO_DXT5nm)
+    return packednormal.xyz * 2 - 1;
+#else
+    return UnpackNormalmapRGorAG(packednormal);
+#endif
+}
+
+fixed3 tNormal = UnpackNormal(tex2D(_BumpTex,i.uv));
+```
+
 # 基础纹理
+
+## 纹理坐标UV
+可以使用float4来储存两张纹理的坐标，uv.xy、uv.zw。
+
+主纹理和凹凸纹理一般共用一个坐标。
+
+插值寄存器最大支持float4，储存3x3矩阵可用3个float4值，充分利用空间可以把第四个值w储存其他数据。
+
+## 纹理采样tex2D
+
+fixed4 tex2D(sampler2D Tex,float2 uv)
+
+输入纹理和纹理坐标，返回对纹理的采样（rgba值）
 
 ## 反射率计算
 
-`fixed3 albedo = tex2D(_MainTex,i.uv)*_Color.rgb;`
+`fixed3 albedo = tex2D(_MainTex,i.uv).rgb*_Color.rgb;`
 
 运用于漫反射和环境光
 `fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.xyz*albedo;`
 `fixed3 diffuse = _LightColor0.rgb * albedo*saturate(dot(i.wNormal,lightDir));`
 
-## Wrap Mode
-Wrap Mode 决定了当纹理坐标超过[0, 1]范围后将会如何被平铺
+## \_TexName\_ST属性
 
+在纹理名后加上\_ST，用于储存纹理坐标的缩放和偏移，类型为float4。直接声明即可。
+```
+sampler2D _MainTex;
+float4 _MainTex_ST;
+```
+- TRANSFORM_TEX
+```
+#define TRANSFORM_TEX(tex,name) (tex.xy * name##_ST.xy + name##_ST.zw)
+
+o.uv.xy = TRANSFORM_TEX(v.texcoord,_MainTex);
+```
+TRANSFORM_TEX即应用缩放和偏移到纹理坐标
+
+## 纹理属性
+
+### Wrap Mode
+
+决定了当纹理坐标超过[0, 1]范围后将会如何被平铺
+
+- Repeat，超过[0, 1]则截取小数部分，效果是重复
+- Clamp，大于1则为1，小于0则为0
+
+### Filter Mode
+
+决定了当纹理由于变换而产生拉伸时将会采用哪种滤波模式
+
+Point、 Bilinear、Trilinear，质量依次提升。会影响多级渐远纹理（Mip Maps）的效果。
+
+### Generate Mip Maps
+
+开启多级渐远纹理技术，没有开启则Filter Mode中Bilinear、Trilinear效果一样。
+
+## 凹凸映射（法线贴图）
+
+分模型空间、切线空间、灰度图（高度图）。一般使用切线空间。
+
+对模型空间/切线空间下的法线贴图采样，得到的是将[-1,1]映射到[0,1]的值，p=(n+1)/2，所以要得到法线，则n=2p-1。
+
+tex2D采样只能得到二维坐标xy，由于切线空间中法线总是正方向，所以z坐标可以直接由xy求得。
+
+- inline fixed3 UnpackNormal(fixed4 packednormal)
+从采样中求解法线，需要将纹理类型设置成Normal Map
+```
+inline fixed3 UnpackNormal(fixed4 packednormal)
+{
+#if defined(UNITY_NO_DXT5nm)
+    return packednormal.xyz * 2 - 1;
+#else
+    return UnpackNormalmapRGorAG(packednormal);
+#endif
+}
+
+fixed3 tNormal = UnpackNormal(tex2D(_BumpTex,i.uv));
+```
+
+- 副切线的计算需要乘v.tangent.w，因为OpenGL和DirectX的uv坐标v轴是相反的
+
+`fixed3 wBiTangent = cross(wNormal,wTangent.xyz)*v.tangent.w;`
+
+- 切线空间的好处
+
+1、切线空间记录的是相对法线信息，所以可以使用在不同的网格上
+2、可进行uv动画
+3、可压缩（只需储存xy）
+
+- 切线空间到世界空间的变换矩阵
+```
+fixed3 wTangent = UnityObjectToWorldDir(v.tangent.xyz);
+fixed3 wNormal = UnityObjectToWorldNormal(v.normal);
+fixed3 wBiTangent = cross(wNormal,wTangent.xyz)*v.tangent.w;
+
+//一个float4储存矩阵的一行
+o.TanToWrd0 = float4(wTangent.x,wBiTangent.x,wNormal.x,wPos.x);
+o.TanToWrd1 = float4(wTangent.y,wBiTangent.y,wNormal.y,wPos.y);
+o.TanToWrd2 = float4(wTangent.z,wBiTangent.z,wNormal.z,wPos.z);
+```
+
+## 渐变纹理
+
+可用于计算漫反射，获得插画风格的渲染效果。
+
+结合半兰伯特模型，对渐变纹理以坐标fixed2(halfLambert, halfLambert)进行采样。渐变纹理实际上是一维坐标（v轴上值相同），所以uv两个坐标都使用halfLambert。
+
+```
+fixed halfLambert  = 0.5 * dot(worldNormal, worldLightDir) + 0.5;
+fixed3 diffuseColor = tex2D(_RampTex, fixed2(halfLambert, halfLambert)).rgb * _Color.rgb;
+fixed3 diffuse = _LightColor0.rgb * diffuseColor;
+```
+
+当使用fixed2(halfLambert, halfLambert)对渐变纹理进行采样时，虽然理论上halfLambert的值在[0, 1]之间，但由于浮点精度问题可能会有1.00001这样的值出现。如果我们使用的是Repeat模式，此时就会舍弃整数部分，只保留小数部分，得到的值就是0.000 01，导致错误。所以**渐变纹理的Wrap Mode应设置为Clamp**。
+
+## 遮罩纹理
+
+用于对纹理进行像素级的控制。对需要控制的效果乘上遮罩纹理的采样即可。
+
+遮罩纹理也可以利用rgba通道来储存多种数据，实现高自由度的贴图效果。
+
+# 透明效果
