@@ -123,6 +123,7 @@ Cull 剔除。值：Back ｜ Front｜ Off，剔除背面/正面/关闭剔除。
 ZTest 深度测试模式。值：Less Greater｜ LEqual｜ GEqual｜ Equal｜ NotEqual｜ Always，设置深度测试时使用的函数
 ZWrite 是否开启深度写入。值：On ｜ Off，开启/关闭。
 Blend 混合模式。值：SrcFactor DstFactor，开启并设置混合模式
+ColorMask RGB | A | 0 | 其他任何R、G、B、A的组合，用于指定渲染结果的输出通道，当ColorMask设为0时，意味着该Pass不写入任何颜色通道，即不会输出任何颜色。
 ```
 - Pass
 
@@ -417,11 +418,11 @@ object space到world space的变换矩阵
 
 - inline float3 UnityObjectToWorldDir( in float3 dir )、UnityWorldToObjectDir
 
-将方向矢量从object space变换到world space
+将方向矢量从object space变换到world space，**输入float4会忽略w分量**
 
-- inline float4 UnityWorldToClipPos( in float3 pos )
+- inline float4 UnityWorldToClipPos( in float3 pos )、UnityObjectToClipPos
 
-将位置矢量从world space变换到clip space
+将位置矢量从world space/object space变换到clip space
 
 - #define TRANSFORM_TEX(tex,name) (tex.xy \* name##\_ST.xy + name##\_ST.zw)
 
@@ -572,3 +573,6 @@ fixed3 diffuse = _LightColor0.rgb * diffuseColor;
 遮罩纹理也可以利用rgba通道来储存多种数据，实现高自由度的贴图效果。
 
 # 透明效果
+
+## 透明度测试
+## 透明度混合
