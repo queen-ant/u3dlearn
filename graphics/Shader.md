@@ -648,6 +648,7 @@ DstColor = ScrFactor\*SrcColor + DstFactor\*DstColor
 对rgb通道和a通道使用不相同的因子。注意要一个逗号隔开。
 
 DstColor.rgb = ScrFactor\*SrcColor.rgb + DstFactor\*DstColor.rgb
+
 DstColor.a = ScrFactorA\*SrcColor.a + DstFactorA\*DstColor.a
 
 #### 支持的因子有：
@@ -661,7 +662,7 @@ DstColor.a = ScrFactorA\*SrcColor.a + DstFactorA\*DstColor.a
 - OneMinusSrcAlpha 1-源颜色a通道
 - OneMinusDstColor 1-目标颜色
 - OneMinusDstAlpha 1-目标颜色a通道
-
+####
 - Blend BlendOperation
 
 设置混合操作。
