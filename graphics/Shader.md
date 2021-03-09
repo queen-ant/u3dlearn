@@ -1,3 +1,5 @@
+参考：https://github.com/candycat1992/Unity_Shaders_Book
+
 # 渲染过程（概念）
 ## 应用阶段
 - 布置场景数据
