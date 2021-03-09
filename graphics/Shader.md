@@ -576,5 +576,126 @@ fixed3 diffuse = _LightColor0.rgb * diffuseColor;
 
 # 透明效果
 
+先渲染不透明物体，然后再从后往前渲染透明物体。
+
+## Queue
+
+索引号越小，渲染顺序越靠前。
+
+- Background 索引号1000
+
+最先渲染的队列
+
+- Geometry 索引号2000
+
+默认队列，不透明物体使用此队列
+
+- AlphaTest 索引号2450
+
+需要透明度测试的物体使用此队列
+
+- Transparent 索引号3000
+
+需要透明度测试混合的物体使用此队列
+
+- Overlay 索引号4000
+
+最后渲染的队列，可用于实现叠加效果
+
 ## 透明度测试
+
+还需的Tags：{"IgnoreProjector"="True" "RenderMode"="TransparentCutout"}
+
+要么可见要么不可见。
+
+只需在片元shader中最前面使用clip。对含有透明度的纹理进行采样，将texColor.a与设定的_Cutoff比较，小于则剔除。
+
+```
+// Alpha test
+    clip (texColor.a - _Cutoff);
+// Equal to 
+//  if ((texColor.a - _Cutoff) < 0.0) {
+//      discard;
+//  }
+```
+
 ## 透明度混合
+
+还需的Tags：{"IgnoreProjector"="True" "RenderMode"="Transparent"}
+
+需要关闭深度写入(ZWrite Off)，但是不会关闭深度测试，所以先渲染不透明物体再渲染透明物体也能正常遮挡。
+
+### Blend
+
+在Unity中，当我们使用Blend（Blend Off命令除外）命令时，除了设置混合状态外也开启了混合。
+
+但是，在其他图形API中我们是需要手动开启的。
+
+例如在OpenGL中，我们需要使用glEnable(GL_BLEND)来开启混合。但在Unity中，它已经在背后为我们做了这些工作。
+
+- Blend Off
+
+关闭混合
+
+- Blend ScrFactor DstFactor
+
+对rgb通道和a通道使用相同的因子
+
+DstColor = ScrFactor\*SrcColor + DstFactor\*DstColor
+
+- Blend ScrFactor DstFactor, ScrFactorA DstFactorA
+
+对rgb通道和a通道使用不相同的因子。注意要一个逗号隔开。
+
+DstColor.rgb = ScrFactor\*SrcColor.rgb + DstFactor\*DstColor.rgb
+DstColor.a = ScrFactorA\*SrcColor.a + DstFactorA\*DstColor.a
+
+#### 支持的因子有：
+- One 1
+- Zero 0
+- SrcColor 源颜色，包含四个通道
+- SrcAlpha 源颜色a通道
+- DstColor 目标颜色，包含四个通道
+- DstAlpha 目标颜色a通道
+- OneMinusSrcColor 1-源颜色
+- OneMinusSrcAlpha 1-源颜色a通道
+- OneMinusDstColor 1-目标颜色
+- OneMinusDstAlpha 1-目标颜色a通道
+
+- Blend BlendOperation
+
+设置混合操作。
+
+#### 支持的操作有：
+
+- Add 默认操作
+- Sub 默认操作Add中加变成减
+- RevSub 调换Sub中的相减顺序，即用混合后的目标颜色减去混合后的源颜色
+- Min 取rgba四个通道中源颜色和目标颜色的较小值，无需因子计算
+- Max 取rgba四个通道中源颜色和目标颜色的较大值，无需因子计算
+
+#### 常见的混合类型
+```
+// 正常（Normal），即透明度混合
+Blend SrcAlpha OneMinusSrcAlpha
+// 柔和相加（Soft Additive）
+Blend OneMinusDstColor One
+// 正片叠底（Multiply），即相乘
+Blend DstColor Zero
+// 两倍相乘（2x Multiply）
+Blend DstColor SrcColor
+// 变暗（Darken）
+BlendOp Min
+Blend One One
+// 变亮（Lighten）
+BlendOp Max
+Blend One One
+// 滤色（Screen）
+Blend OneMinusDstColor One
+// 等同于
+Blend One OneMinusSrcColor
+// 线性减淡（Linear Dodge）
+Blend One One
+```
+
+## 双面渲染
