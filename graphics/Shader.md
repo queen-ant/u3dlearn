@@ -121,7 +121,8 @@ Tags { "TagName1" = "Value1" "TagName2" = "Value2" }
 
 这些指令可以设置显卡的各种状态
 ```
-Cull 剔除。值：Back ｜ Front｜ Off，剔除背面/正面/关闭剔除。
+
+剔除。值：Back ｜ Front｜ Off，剔除背面/正面/关闭剔除。
 ZTest 深度测试模式。值：Less Greater｜ LEqual｜ GEqual｜ Equal｜ NotEqual｜ Always，设置深度测试时使用的函数
 ZWrite 是否开启深度写入。值：On ｜ Off，开启/关闭。
 Blend 混合模式。值：SrcFactor DstFactor，开启并设置混合模式
@@ -625,6 +626,11 @@ fixed3 diffuse = _LightColor0.rgb * diffuseColor;
 
 需要关闭深度写入(ZWrite Off)，但是不会关闭深度测试，所以先渲染不透明物体再渲染透明物体也能正常遮挡。
 
+设置好Blend之后只需在片元shader中返回a通道的值即可：
+```
+return fixed4(ambient + diffuse, texColor.a * _AlphaScale);
+```
+
 ### Blend
 
 在Unity中，当我们使用Blend（Blend Off命令除外）命令时，除了设置混合状态外也开启了混合。
@@ -645,11 +651,23 @@ DstColor = ScrFactor\*SrcColor + DstFactor\*DstColor
 
 - Blend ScrFactor DstFactor, ScrFactorA DstFactorA
 
-对rgb通道和a通道使用不相同的因子。注意要一个逗号隔开。
+对rgb通道和a通道使用不相同的因子。**注意要一个逗号隔开**。
 
 DstColor.rgb = ScrFactor\*SrcColor.rgb + DstFactor\*DstColor.rgb
 
 DstColor.a = ScrFactorA\*SrcColor.a + DstFactorA\*DstColor.a
+
+- Blend BlendOperation
+
+设置混合操作。
+
+#### 支持的操作有：
+
+- Add 默认操作
+- Sub 默认操作Add中加变成减
+- RevSub 调换Sub中的相减顺序，即用混合后的目标颜色减去混合后的源颜色
+- Min 取rgba四个通道中源颜色和目标颜色的较小值，无需因子计算
+- Max 取rgba四个通道中源颜色和目标颜色的较大值，无需因子计算
 
 #### 支持的因子有：
 - One 1
@@ -662,18 +680,6 @@ DstColor.a = ScrFactorA\*SrcColor.a + DstFactorA\*DstColor.a
 - OneMinusSrcAlpha 1-源颜色a通道
 - OneMinusDstColor 1-目标颜色
 - OneMinusDstAlpha 1-目标颜色a通道
-####
-- Blend BlendOperation
-
-设置混合操作。
-
-#### 支持的操作有：
-
-- Add 默认操作
-- Sub 默认操作Add中加变成减
-- RevSub 调换Sub中的相减顺序，即用混合后的目标颜色减去混合后的源颜色
-- Min 取rgba四个通道中源颜色和目标颜色的较小值，无需因子计算
-- Max 取rgba四个通道中源颜色和目标颜色的较大值，无需因子计算
 
 #### 常见的混合类型
 ```
@@ -698,5 +704,49 @@ Blend One OneMinusSrcColor
 // 线性减淡（Linear Dodge）
 Blend One One
 ```
+## 开启深度写入的透明度混合
+
+一种方案是使用两个Pass 来渲染模型：**第一个Pass开启深度写入，但不输出颜色**，它的目的仅仅是为了把该模型的深度值写入深度缓冲中；
+
+第二个Pass进行正常的透明度混合，由于上一个Pass已经得到了逐像素的正确的深度信息，该Pass就可以按照像素级别的深度排序结果进行透明渲染。
+
+但这种方法的**缺点在于，多使用一个Pass会对性能造成一定的影响**。
+
+在开启Blend的Pass之前添加一个开启深度写入的Pass，然后将ColorMask设为0。
+```
+// Extra pass that renders to depth buffer only
+Pass {
+  Tags{"LightMode"="ForwardBase"}
+  ZWrite On
+  ColorMask 0
+}
+```
 
 ## 双面渲染
+
+用Cull指令来控制需要剔除哪个面的渲染图元。
+
+### 透明度测试的双面渲染
+
+在Pass中设置Cull Off即可
+
+### 透明度混合的双面渲染
+
+使用两个Pass，第一个Pass剔除Front，第二个Pass剔除Back。
+```
+SubShader {
+    Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
+    Pass {
+        Tags { "LightMode"="ForwardBase" }
+        // First pass renders only back faces 
+        Cull Front
+        // 片元shader代码
+    }
+    Pass {
+        Tags { "LightMode"="ForwardBase" }
+        // Second pass renders only front faces 
+        Cull Back
+        // 片元shader代码，与第一个Pass一样
+    }
+}
+```
