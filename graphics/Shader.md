@@ -698,7 +698,7 @@ fixed3 diffuse = _LightColor0.rgb * diffuseColor;
 
 还需的Tags：{"IgnoreProjector"="True" "RenderMode"="Transparent"}
 
-需要关闭深度写入(ZWrite Off)，但是不会关闭深度测试，所以先渲染不透明物体再渲染透明物体也能正常遮挡。
+**需要关闭深度写入(ZWrite Off)，但是不会关闭深度测试**，所以先渲染不透明物体再渲染透明物体也能正常遮挡。
 
 设置好Blend之后只需在片元shader中返回a通道的值即可：
 ```
@@ -824,3 +824,30 @@ SubShader {
     }
 }
 ```
+
+# 渲染路径
+全局默认渲染路径的设置：
+
+Unity 2018：Edit → Project Settings → Player → Other Settings → Rendering Path
+
+Unity 2019：Edit → Project Settings → Graphics → Tier Settings → Rendering Path
+
+摄像机中可以设置渲染路径覆盖默认设置：
+
+Unity 2018：Rendering Path → Use Player Settings 是默认设置
+
+Unity 2019：Rendering Path → Use Graphics Settings 是默认设置
+
+## LightMode
+- Always 不管使用哪种渲染路径，该Pass总是会被渲染，但不会计算任何光照
+- ForwardBase 用于前向渲染 。该Pass会计算环境光、最重要的平行光、逐顶点/SH光源和Lightmaps
+- ForwardAdd 用于前向渲染 。该Pass会计算额外的逐像素光源，每个Pass对应一个光源
+- Deferred 用于延迟渲染 。该Pass会渲染G缓冲（G-buffer）
+- ShadowCaster 把物体的深度信息渲染到阴影映射纹理（shadowmap）或一张深度纹理中
+```C#
+PrepassBase //用于遗留的延迟渲染 。该Pass会渲染法线和高光反射的指数部分
+PrepassFinal //用于遗留的延迟渲染 。该Pass通过合并纹理、光照和自发光来渲染得到最后的颜色
+Vertex、VertexLMRGBM和VertexLM //用于遗留的顶点照明渲染
+```
+## 前向渲染
+## 延迟渲染
