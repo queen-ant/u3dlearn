@@ -848,6 +848,7 @@ Unity 2019：Rendering Path → Use Graphics Settings 是默认设置
 - ForwardAdd 用于前向渲染 。该Pass会计算额外的逐像素光源，每个Pass对应一个光源
 - Deferred 用于延迟渲染 。该Pass会渲染G缓冲（G-buffer）
 - ShadowCaster 把物体的深度信息渲染到阴影映射纹理（shadowmap）或一张深度纹理中
+- 旧版：
 ```C#
 PrepassBase //用于遗留的延迟渲染 。该Pass会渲染法线和高光反射的指数部分
 PrepassFinal //用于遗留的延迟渲染 。该Pass通过合并纹理、光照和自发光来渲染得到最后的颜色
