@@ -217,6 +217,10 @@ ColorMask RGB | A | 0 | 其他任何R、G、B、A的组合，用于指定渲染�
 {"LightMode"} //设置Pass在渲染流水线中的角色
 {"RequirOption"} //达到某种条件后才渲染该Pass
 ```
+详情：
+
+[LightMode](#lightMode)
+
 ### FallBack
 
 当所有SubShader都不能支持时，使用FallBack给定的shader
