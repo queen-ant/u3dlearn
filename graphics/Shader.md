@@ -169,10 +169,10 @@ Tags { "TagName1" = "Value1" "TagName2" = "Value2" }
 ```C
 {"Queue"} //控制渲染队列
 {"RenderType"} //对着色器分类
-{"DisableBatching"} //关闭批处理
-{"ForceNoShadowCasting"} //禁止投射阴影
-{"IgnoreProjector"} //忽略projector
-{"CanUseSpriteAtlas"} //是否用于精灵图
+{"DisableBatching"} // true|false，关闭批处理
+{"ForceNoShadowCasting"} // true|false，禁止投射阴影
+{"IgnoreProjector"} // true|false，忽略projector
+{"CanUseSpriteAtlas"} // true|false，是否用于精灵图
 {"PreviewType"} //面板预览类型
 
 //上述标签仅可以在SubShader 中声明，而不可以在Pass块中声明
@@ -180,7 +180,15 @@ Tags { "TagName1" = "Value1" "TagName2" = "Value2" }
 详情：
 
 [Queue](#queue)
+“RenderType”：定义渲染类型。预制的值有这些
 
+    ”Opaque”：绝大部分不透明的物体都使用这个； 
+    
+    ”Transparent”：绝大部分透明的物体、包括粒子特效都使用这个； 
+    
+    ”Background”：天空盒都使用这个； 
+    
+    ”Overlay”：GUI、镜头光晕都使用这个；
 
 - RenderSetup（渲染状态设置）
 
