@@ -180,15 +180,16 @@ Tags { "TagName1" = "Value1" "TagName2" = "Value2" }
 详情：
 
 [Queue](#queue)
-“RenderType”：定义渲染类型。预制的值有这些
 
-    ”Opaque”：绝大部分不透明的物体都使用这个； 
+"RenderType"：定义渲染类型。预制的值有这些
+
+    "Opaque"：绝大部分不透明的物体都使用这个； 
     
-    ”Transparent”：绝大部分透明的物体、包括粒子特效都使用这个； 
+    "Transparent"：绝大部分透明的物体、包括粒子特效都使用这个； 
     
-    ”Background”：天空盒都使用这个； 
+    "Background"：天空盒都使用这个； 
     
-    ”Overlay”：GUI、镜头光晕都使用这个；
+    "Overlay"：GUI、镜头光晕都使用这个；
 
 - RenderSetup（渲染状态设置）
 
@@ -658,7 +659,7 @@ fixed3 diffuse = _LightColor0.rgb * diffuseColor;
 
 - Background 索引号1000
 
-最先渲染的队列
+最先渲染的队列，如天空盒
 
 - Geometry 索引号2000
 
@@ -674,7 +675,7 @@ fixed3 diffuse = _LightColor0.rgb * diffuseColor;
 
 - Overlay 索引号4000
 
-最后渲染的队列，可用于实现叠加效果
+最后渲染的队列，可用于实现叠加效果，如镜头光晕
 
 ## 透明度测试
 
