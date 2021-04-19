@@ -855,4 +855,183 @@ PrepassFinal //用于遗留的延迟渲染 。该Pass通过合并纹理、光照
 Vertex、VertexLMRGBM和VertexLM //用于遗留的顶点照明渲染
 ```
 ## 前向渲染
+顶点照明渲染路径仅仅是前向渲染路径的一个子集，因此已经被抛弃。
+
+三个缓冲区：颜色缓冲、深度缓冲（Z buffer）、模板缓冲（Stencil Buffer）。帧缓冲是以上三种缓冲结合起来的统称。
+
+在前向渲染中，先利用深度缓冲中的深度值进行**深度测试**决定一个片元是否可见，若可见则进行光照计算，并更新帧缓冲；否则剔除。
+
+有三种光照处理模式：逐顶点处理、逐像素处理，球谐函数 （Spherical Harmonics，SH）处理 
+
+在前向渲染中，
+- 场景中最亮的平行光（方向光）总是按逐像素处理。
+- 渲染模式被设置成Important的光源，会按逐像素处理。
+- 渲染模式被设置成Not Important的光源，会按逐顶点或者SH处理。
+- 如果根据以上规则得到的逐像素光源数量小于Quality Setting 中的逐像素光源数量(Pixel Light Count)，会有更多的光源以逐像素的方式进行渲染。
+- 最多有4个光源按逐顶点处理。
+
+### Base Pass
+渲染设置
+```
+Tags{"LightMode"="ForwardBase"}
+#pragma multi_compile_fwdbase
+```
+光照计算
+```
+一个逐像素的最亮平行光，以及所有逐顶点和SH光源。
+```
+可实现并访问的光照效果
+```
+光照纹理（lightmap）
+环境光
+自发光
+阴影（平行光阴影）
+```
+Base Pass一般只定义一个，但是也可以定义多次，例如需要双面渲染等情况。只有一个Base Pass时，一个Base Pass仅会执行一次。
+
+### Additional Pass
+渲染设置
+```
+Tags{"LightMode"="ForwardAdd"}
+//如果我们没有开启和设置混合模式，那么Additional Pass的渲染结果会覆盖掉之前的渲染结果
+//通常情况下，我们选择的混合模式是Blend One One，线性减淡
+Blend One One
+#pragma multi_compile_fwdadd
+```
+光照计算
+```
+其他影响物体的逐像素光源，每个逐像素光源执行一次该Pass
+
+一个Additional Pass会根据影响该物体的其他逐像素光源的数目被多次调用，即每个逐像素光源会执行一次Additional Pass
+```
+光照效果
+```
+默认不支持阴影
+```
+Additional Pass中渲染的光源在默认情况下是没有阴影效果的，即便我们在它的Light组件中设置了有阴影的Shadow Type。
+
+但我们可以在Additional Pass中使用 __#pragma multi_compile_fwdadd_fullshadows__ 代替#pragma multi_compile_fwdadd编译指令，为点光源和聚光灯开启阴影效果。
+
+但这需要Unity在内部使用更多的Shader变种。
+
+### 可使用的变量和函数
+- 变量
+```C#
+float4 _LightColor0
+//该Pass处理的逐像素光源的颜色
+
+float4 _WorldSpaceLightPos0
+//_WorldSpaceLightPos0.xyz是该Pass处理的逐像素光源的位置。
+//如果该光源是平行光，那么_WorldSpaceLightPos0.w是0，其他光源类型w值为1
+
+float4×4 _LightMatrix0
+//从世界空间到光源空间的变换矩阵。可以用于采样cookie和光强衰减（attenuation）纹理
+
+float4 unity_4LightPosX0
+float4 unity_4LightPosY0
+float4 unity_4LightPosZ0
+//仅用于Base Pass。前4个非重要的点光源在世界空间中的位置
+
+float4 unity_4LightAtten0
+//仅用于Base Pass。存储了前4个非重要的点光源的衰减因子
+
+half4[4] unity_LightColor
+//仅用于Base Pass。存储了前4个非重要的点光源的颜色
+
+```
+- 函数
+```C#
+float3 WorldSpaceLightDir (float4 v)
+//仅可用于前向渲染中 。输入一个模型空间中的顶点位置，返回世界空间中从该点到光源的光照方向。
+//内部实现使用了UnityWorldSpaceLightDir函数
+//没有被归一化
+
+float3 UnityWorldSpaceLightDir (float4 v)
+//仅可用于前向渲染中 。输入一个世界空间中的顶点位置，返回世界空间中从该点到光源的光照方向。
+//没有被归一化
+
+float3 ObjSpaceLightDir (float4 v)
+//仅可用于前向渲染中 。输入一个模型空间中的顶点位置，返回模型空间中从该点到光源的光照方向。
+//没有被归一化
+
+float3 Shade4PointLights (...)
+//仅可用于前向渲染中。计算四个点光源的光照，它的参数是已经打包进矢量的光照数据，通常就是上述的内置变量，
+//如unity_4LightPosX0, unity_4LightPosY0, unity_4LightPosZ0、unity_LightColor和unity_4LightAtten0等。
+//前向渲染通常会使用这个函数来计算逐顶点光照
+```
 ## 延迟渲染
+
+除了前向渲染中使用的颜色缓冲和深度缓冲外，延迟渲染还会利用额外的缓冲区，这些缓冲区也被统称为**G缓冲（G-buffer）**，其中G是英文**Geometry**的缩写。
+
+G缓冲区存储了我们所关心的表面（通常指的是离摄像机最近的表面）的其他信息，例如该表面的法线、位置、用于光照计算的材质属性等。
+
+**延迟渲染必须包含两个Pass。**
+
+在第一个Pass中，我们**不进行任何光照计算，而是仅仅计算哪些片元是可见的**。
+
+这主要是通过深度缓冲技术来实现，**当发现一个片元是可见的，我们就把它的相关信息存储到G缓冲区中**。
+
+**对于每个物体来说，该Pass仅会执行一次**。
+
+在第二个Pass中，我们**利用G缓冲区的各个片元信息，例如表面法线、视角方向、漫反射系数等，进行真正的光照计算，并更新到帧缓冲中**。
+
+- 优点
+```
+可以看出，延迟渲染使用的Pass数目通常就是两个，这跟场景中包含的光源数目是没有关系的。信息全部统一存储到G缓冲中，然后统一计算。
+
+换句话说，延迟渲染的效率不依赖于场景的复杂度，而是和我们使用的屏幕空间的大小有关，与物体接受光照的像素数成正比。
+
+对于延迟渲染路径来说，它最适合在场景中光源数目很多、如果使用前向渲染会造成性能瓶颈的情况下使用。
+```
+而且，**延迟渲染路径中的每个光源都可以按逐像素的方式处理**。
+
+- 缺点：
+```
+不支持真正的抗锯齿（anti-aliasing）功能。
+
+不能处理半透明物体。
+
+对显卡有一定要求。如果要使用延迟渲染的话，显卡必须支持MRT（Multiple Render Targets）、Shader Mode 3.0及以上、深度渲染纹理以及双面的模板缓冲。
+（2006 年以后制造的大多数 PC 显卡都支持延迟着色。所有至少运行 OpenGL ES 3.0 的移动设备都支持延迟着色。）
+```
+**注意：使用正交投影 (Orthographic projection) 时不支持延迟渲染。如果摄像机的投影模式设置为正交模式，则摄像机将回退到前向渲染**。
+
+### G缓冲区中默认包含的渲染纹理（Render Texture，RT）
+
+RT的通道使用情况在中括号内。
+
+- RT0：ARGB32格式：漫射颜色[RGB]，遮挡[A] 。
+- RT1：ARGB32格式：高光反射（镜面反射）颜色[RGB] ，粗糙度[A] (即高光反射指数部分)。
+- RT2：ARGB2101010格式：世界空间法线[RGB] ，A通道未使用。
+- RT3：ARGB2101010(非HDR) 或 ARGBHalf(HDR)格式：自发光 + lightmap + 反射探针（reflection probes）
+- 深度+模板缓冲区。
+
+因此，默认的 G 缓冲区布局为 160 位/像素（非 HDR）或 192 位/像素 (HDR)。
+
+**如果混合光照模式为 Shadowmask 或 Distance Shadowmask，则使用第五个RT**：
+
+- RT4，ARGB32格式：光照遮挡值 (RGBA)。
+
+此时，G 缓冲区布局为 192 位/像素（非 HDR）或 224 位/像素 (HDR)。
+
+**如果硬件不支持五个并发渲染目标，则使用阴影遮罩的对象将回退到前向渲染路径**。
+
+当摄像机不使用 HDR 时，自发光 + lightmap (RT3) 采用对数编码，因此提供的动态范围高于 ARGB32 纹理通常可能提供的范围。
+
+请注意，当摄像机使用 HDR 渲染时，不会为自发光 + lightmap (RT3) 创建单独的渲染目标；而是将摄像机渲染到的渲染目标（即传递给图像效果的渲染目标）用作 RT3。
+
+**当在第二个Pass中计算光照时，默认情况下仅可以使用Unity内置的Standard光照模型**。
+
+如果我们想要使用其他的光照模型，就需要替换掉原有的Internal-DeferredShading.shader文件。(见 https://docs.unity3d.com/cn/2019.4/Manual/RenderTech-DeferredShading.html 末尾)
+
+方法是将内置着色器中的 Internal-DeferredShading.shader 文件的修改版本放入“Assets”文件夹中名为“Resources”的文件夹内。然后打开 Graphics 设置（菜单：Edit > Project Settings，然后单击 Graphics 类别）。将“Deferred”下拉选单改为“Custom Shader”。然后，更改当前使用的着色器对应的着色器 (Shader) 选项。
+
+### 可使用的变量和函数
+- 变量
+```C#
+float4 _LightColor
+//光源颜色
+
+float4×4 _LightMatrix0
+//从世界空间到光源空间的变换矩阵。可以用于采样cookie和光强衰减纹理
+```
