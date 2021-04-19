@@ -195,13 +195,16 @@ Tags { "TagName1" = "Value1" "TagName2" = "Value2" }
 
 这些指令可以设置显卡的各种状态
 ```
-
 Cull 剔除。值：Back ｜ Front｜ Off，剔除背面/正面/关闭剔除。
 ZTest 深度测试模式。值：Less Greater｜ LEqual｜ GEqual｜ Equal｜ NotEqual｜ Always，设置深度测试时使用的函数
 ZWrite 是否开启深度写入。值：On ｜ Off，开启/关闭。
 Blend 混合模式。值：SrcFactor DstFactor，开启并设置混合模式
 ColorMask RGB | A | 0 | 其他任何R、G、B、A的组合，用于指定渲染结果的输出通道，当ColorMask设为0时，意味着该Pass不写入任何颜色通道，即不会输出任何颜色。
 ```
+详情：
+
+[Blend](#blend)
+
 - Pass
 
 一样有Name，Tag，RenderSetup
