@@ -557,6 +557,8 @@ fixed4 tex2D(sampler2D Tex,float2 uv)
 ## \_TexName\_ST属性
 
 在纹理名后加上\_ST，用于储存纹理坐标的缩放和偏移，类型为float4。直接声明即可。
+
+**其中偏移的取值范围是[-1,1]，如0.1则为偏移该轴方向上纹理长度1/10的距离**
 ```
 sampler2D _MainTex;
 float4 _MainTex_ST;
@@ -567,7 +569,7 @@ float4 _MainTex_ST;
 
 o.uv.xy = TRANSFORM_TEX(v.texcoord,_MainTex);
 ```
-TRANSFORM_TEX即应用缩放和偏移到纹理坐标
+TRANSFORM_TEX即应用缩放和偏移到texcoord坐标，texcoord是物体的顶点属性，所以跟纹理（_MainTex）的变换是相反的。如Material文件面板上Tiling为2是缩小两倍，Offset为正是纹理左移。
 
 ## 纹理属性
 
@@ -868,8 +870,8 @@ Vertex、VertexLMRGBM和VertexLM //用于遗留的顶点照明渲染
 
 在前向渲染中，
 - 场景中最亮的平行光（方向光）总是按逐像素处理。
-- 渲染模式被设置成Important的光源，会按逐像素处理。
-- 渲染模式被设置成Not Important的光源，会按逐顶点或者SH处理。
+- **渲染模式被设置成Important的光源，会按逐像素处理。**
+- **渲染模式被设置成Not Important的光源，会按逐顶点或者SH处理。**
 - 如果根据以上规则得到的逐像素光源数量小于Quality Setting 中的逐像素光源数量(Pixel Light Count)，会有更多的光源以逐像素的方式进行渲染。
 - 最多有4个光源按逐顶点处理。
 
@@ -921,7 +923,7 @@ Additional Pass中渲染的光源在默认情况下是没有阴影效果的，�
 - 变量
 ```C#
 float4 _LightColor0
-//该Pass处理的逐像素光源的颜色
+//该Pass处理的逐像素光源的颜色，已经是颜色和强度相乘后的结果
 
 float4 _WorldSpaceLightPos0
 //_WorldSpaceLightPos0.xyz是该Pass处理的逐像素光源的位置。
@@ -1038,3 +1040,149 @@ float4 _LightColor
 float4×4 _LightMatrix0
 //从世界空间到光源空间的变换矩阵。可以用于采样cookie和光强衰减纹理
 ```
+
+## 光源类型
+**5个基本属性：位置、方向、颜色、强度、衰减**
+
+- 平行光
+
+只有方向没有位置，没有光照衰减
+
+- 点光源
+
+半径（Range）
+
+- 聚光灯
+
+高度（Range）、锥顶角度（Spot Angle）
+
+- 面光源
+
+烘焙时发挥作用
+
+**光源的强度和颜色以及光源到物体的距离将会影响前向渲染中光源重要度的排序**
+
+### 不同光源的宏
+UnityCG.cginc内置的UnityWorldSpaceLightDir如下
+```C++
+inline float3 UnityWorldSpaceLightDir( in float3 worldPos )
+{
+    #ifndef USING_LIGHT_MULTI_COMPILE
+        return _WorldSpaceLightPos0.xyz - worldPos * _WorldSpaceLightPos0.w;
+    #else
+        #ifndef USING_DIRECTIONAL_LIGHT
+        return _WorldSpaceLightPos0.xyz - worldPos;
+        #else
+        return _WorldSpaceLightPos0.xyz;
+        #endif
+    #endif
+}
+```
+判断逐像素光源的类型通过判断内置宏是否定义，使用#ifdef指令或#ifndef指令。
+
+使用预编译指令#pragma multi_compile_fwdbase(或#pragma multi_compile_fwdadd)的情况下，如果判断得知是平行光的话，光源方向可以直接由 **_WorldSpaceLightPos0.xyz** 得到；如果是点光源或聚光灯，那么 **_WorldSpaceLightPos0.xyz** 表示的是世界空间下的光源位置。
+
+## 光照衰减
+
+Unity在内部使用一张名为_LightTexture0的纹理，其中_LightTexture0对角线上的纹理颜色值，表明了在光源空间中不同位置的点的衰减值，由此来获取光源衰减。
+
+为了对_LightTexture0纹理采样得到给定点到该光源的衰减值，我们首先需要得到该点在**光源空间**中的位置，这是通过_LightMatrix0变换矩阵得到的。
+```C++
+float3 lightCoord = mul(_LightMatrix0, float4(i.worldPosition, 1)).xyz;
+```
+然后，使用这个坐标的模的平方对衰减纹理进行对角线上的采样，再使用宏UNITY_ATTEN_CHANNEL来得到衰减纹理中衰减值所在的分量，以得到最终的衰减值：
+```C++
+fixed atten = tex2D(_LightTexture0, dot(lightCoord,  lightCoord).rr).UNITY_ATTEN_CHANNEL;
+```
+
+## 阴影
+
+### Shadow Map
+计算阴影区域最常使用的是一种名为Shadow Map的技术。首先把摄像机的位置放在与光源重合的位置上，那么场景中该光源的阴影区域就是那些摄像机看不到的地方。
+
+在前向渲染路径中，如果场景中最重要的平行光开启了阴影，Unity就会为该光源计算它的**阴影映射纹理（shadowmap）**。
+
+shadowmap本质上也是一张深度图，它记录了从该光源的位置出发、能看到的场景中距离它最近的表面位置（深度信息）。
+
+计算shadowmap一种方法是，先把摄像机放置到光源的位置上，然后按正常的渲染流程，即调用Base Pass和Additional Pass来更新深度信息，得到阴影映射纹理。但这种方法会对性能造成一定的浪费，因为我们实际上仅仅需要深度信息而已。
+
+因此，Unity选择使用一个额外的Pass来专门更新光源的shadowmap，**这个Pass就是LightMode标签被设置为ShadowCaster的Pass**。
+
+Unity首先把摄像机放置到光源的位置上，然后调用该Pass，通过对顶点变换后得到**光源空间**下的位置，并据此来输出深度信息到shadowmap中。
+
+当开启了光源的阴影效果后，底层渲染引擎首先会在当前渲染物体的Unity Shader中找到LightMode为ShadowCaster的Pass。如果没有，它就会在**Fallback指定的Unity Shader中继续寻找**（除透明度混合以外的Unity内建Shader都带这个Pass）。如果仍然没有找到，该物体就无法向其他物体投射阴影（但它仍然可以接收来自其他物体的阴影）。
+
+**内建Shader的源码可在 https://unity3d.com/get-unity/download/archive 下载，选择Built in shaders即可**。
+
+### Screenspace Shadow Map
+屏幕空间的阴影映射技术 （Screenspace Shadow Map），本是延迟渲染中产生阴影的方法，需要显卡支持MRT，有些移动平台不支持这种特性。
+
+Unity会在ShadowCaster的Pass中，根据光源的阴影映射纹理和摄像机的深度纹理来得到**屏幕空间的阴影图**，表明某些片元**虽然是可见的，但是却处于该光源的阴影中**。通过这样的方式，阴影图就包含了**屏幕空间中所有有阴影的区域**。
+
+如果想要一个物体接收来自其他物体的阴影，只需要在Shader中对阴影图进行采样。由于阴影图是屏幕空间下的，因此，我们首先需要把表面坐标**从模型空间变换到屏幕空间中，然后使用这个坐标对阴影图进行采样**，把采样结果和最后的光照结果**相乘**来产生阴影效果。
+
+### 阴影实现
+
+在Unity中，我们可以选择是否让一个物体投射或接收阴影。这是**通过设置Mesh Renderer组件中的Cast Shadows和Receive Shadows属性**来实现的。
+
+#### Cast Shadows
+- 开启（On）或关闭（Off）
+- Two Sided，在默认情况下，在计算光源的shadowmap时会剔除掉物体的背面。设置为Two Sided则允许对物体的所有面都计算阴影信息。
+
+#### Receive Shadows
+
+开启了Receive Shadows并不能直接实现接受阴影的效果，还需要在Shader中对阴影颜色进行混合。
+
+**需要使用AutoLight.cginc中三个内置宏SHADOW_COORDS、SHADOW_TANSFER、SHADOW_ATTENUATION**。
+
+**需要保证：a2v结构体中的顶点坐标变量名必须是vertex ，顶点着色器的输入结构体a2v必须命名为v ，且v2f中的顶点位置变量必须命名pos**
+
+- **顶点着色器的输出结构体v2f**中添加SHADOW_COORDS：
+```C++
+struct v2f {
+    float4 pos : SV_POSITION;
+    float3 worldNormal : TEXCOORD0;
+    float3 worldPos : TEXCOORD1;
+    SHADOW_COORDS(2)  //注意无;号，参数数字是TEXCOORD序号
+};
+```
+- 顶点着色器返回之前添加TRANSFER_SHADOW ：
+```C++
+v2f vert(a2v v) {
+    v2f o;  
+    ...     
+    // Pass shadow coordinates to pixel shader
+    TRANSFER_SHADOW(o);
+    return o;
+}
+```
+- 在片元着色器中计算阴影值SHADOW_ATTENUATION ：
+```C++
+// Use shadow coordinates to sample shadow map
+fixed shadow = SHADOW_ATTENUATION(i);
+```
+**使用UNITY_LIGHT_ ATTENUATION可以同时计算光照衰减和阴影**
+```C++
+fixed4 frag(v2f i) : SV_Target {
+    ...
+    UNITY_LIGHT_ATTENUATION(atten, i, i.worldPos); //使用三个参数，结果变量名（无需外部声明）、v2f输入、世界空间坐标
+    return fixed4(ambient + (diffuse + specular) * atten, 1.0);
+}
+```
+
+### 透明物体的阴影
+
+- 透明度测试
+
+把FallBack设置为Transparent/Cutout/VertexLit，并将Cast Shadows设置为Two Sided即可。
+
+需要注意的是 ，由于Transparent/Cutout/VertexLit中计算透明度测试时，使用了名为_Cutoff的属性来进行透明度测试，因此，这要求我们的Shader中也**必须提供名为_Cutoff的属性**。否则，同样无法得到正确的阴影结果。
+
+- 透明度混合
+
+一般情况下不会投射阴影，但是通过把它们的Fallback设置为VertexLit、Diffuse这些不透明物体使用的Unity Shader可以强制投射阴影。
+
+# 高级纹理
+## 立方体纹理
+## 渲染纹理
+## 程序纹理
