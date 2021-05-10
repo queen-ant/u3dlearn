@@ -1184,5 +1184,139 @@ fixed4 frag(v2f i) : SV_Target {
 
 # 高级纹理
 ## 立方体纹理
+立方体纹理在Shader属性中类型为Cube，CG代码中类型为samplerCUBE
+
+立方体纹理的采样使用texCUBE函数，用一个矢量进行采样。将以立方体纹理的中心为起点，沿矢量方向与立方体相交的点为采样点。
+
+**创建立方体纹理有三种方法**：
+- 直接由一些特殊布局的纹理创建
+
+提供一张具有特殊布局的纹理，例如类似立方体展开图的交叉布局、全景布局等。然后，把该纹理的Texture Shape设置为Cube即可。
+
+此方法可以对纹理数据进行压缩，而且可以支持边缘修正、光滑反射（glossy reflection）和HDR等功能。
+
+- 手动创建一个Cubemap资源（位于Legacy），再把6张图赋给它
+
+是Unity 5之前的版本中使用的方法。
+
+- 由脚本生成
+
+Camera.RenderToCubemap(Cubemap)函数可以把Camera观察到的场景图像存储到6张图像中，从而创建出该位置上对应的立方体纹理，写入到Cubemap参数中。
+
+### 天空盒子
+天空盒子（Skybox）可使用运用了立方体纹理的材质。
+
+Window → Rendering → Lighting Settings → Skybox可设置Skybox使用的Material。Shader选择使用Skybox/Cubemap。
+
+### 反射和折射
+
+由光路的可逆性，对观察方向矢量viewDir的相反矢量-viewDir进行反射或折射计算，得到的结果就是采样所需的矢量。
+```C++
+reflectDir = reflect(-viewDir, normal);
+fixed3 reflection = texCUBE(_Cubemap, reflectDir).rgb;
+
+//第三个参数:= 入射介质折射率/折射介质折射率，光线与法线夹角大小与折射率的大小成反比
+refractDir = refract(-viewDir, normal, _RefractRatio); //需要归一化
+fixed3 refraction = texCUBE(_Cubemap, refractDir).rgb;
+```
+**使用线性插值lerp与漫反射混合**
+```
+//float3 lerp(float3 a, float3 b, float w) { return a + w*(b-a)};
+//或者写成(1-w)*a+w*b，w=1时为b，w=0时为a
+lerp(diffuse, reflection, _ReflectAmount);
+```
+
+### 菲涅尔反射
+
+菲涅耳反射描述了一种光学现象，即当光线照射到物体表面上时，一部分发生反射，一部分进入物体内部，发生折射或散射。**被反射的光和入射光之间存在一定的比率关系**，这个比率关系可以通过菲涅耳等式进行计算。
+
+- Schlick 菲涅耳近似等式
+
+F+(1-F)\*(1-dot(v,n))^5，F是一个反射系数，用于控制菲涅耳反射的强度， v是视角方向，n表面法线。
+
+- Empricial 菲涅耳近似等式
+
+saturate(bias+scale\*(1-dot(v,n))^power)，是上式的推广
+
+**菲涅耳反射计算结果一般用于lerp的第三个系数**
+```
+lerp(diffuse, reflection, saturate(fresnel));
+```
+**注意一些实现也会直接把fresnel和反射光照相乘后叠加到漫反射光照上**
+
 ## 渲染纹理
+现代的GPU允许我们**把整个三维场景渲染到一个中间缓冲中**，即渲染目标纹理（Render Target Texture，RTT），而不是传统的帧缓冲或后备缓冲（back buffer）。
+
+多重渲染目标 （Multiple Render Target，MRT ，这种技术指的是GPU允许我们把场景同时渲染到多个渲染目标纹理中，而不再需要为每个渲染目标纹理单独渲染完整的场景。**延迟渲染就是使用多重渲染目标的一个应用**。
+
+### 使用方式
+
+- 直接创建Render Texture
+
+可将作Render Texture设置为Camera的Target Texture，则该Camera会把观察到的场景实时渲染到Render Texture中。
+
+- 屏幕后处理
+
+调用GrabPass命令或OnRenderImage函数可获取当前屏幕图像。
+
+Unity会把这个屏幕图像放到一张和屏幕分辨率等同的渲染纹理中，使我们可以在自定义的Pass中进行调用进而处理，从而实现各种屏幕特效。
+
+GrabPass中的字符串为屏幕图像的Render Texture变量名称
+```
+GrabPass{"_TextureName"}
+```
+也可以直接使用```GrabPass{}```，此时使用_GrabTexture来访问屏幕图像的Render Texture。但是，当场景中有多个物体都使用了这样的形式来抓取屏幕时，这种方法的性能消耗比较大，因为**对于每一个使用它的物体，Unity都会为它单独进行一次昂贵的屏幕抓取操作。但这种方法可以让每个物体得到不同的屏幕图像**。
+
+使用了自定义命名时，Unity只会在每一帧时为第一个使用名为_TextureName的纹理的物体执行一次抓取屏幕的操作。这种方法更高效，因为不管场景中有多少物体使用了该命令，**每一帧中Unity都只会执行一次抓取工作，但这也意味着所有物体都会使用同一张屏幕图像**。不过，在大多数情况下这已经足够了。
+
+在其他Pass中需要变量声明
+```
+sampler2D _TextureName;
+float4 _TextureName_TexelSize;
+```
+\_TextureName_TexelSize可以让我们得到该纹理的纹素大小，例如一个大小为256×512的纹理，它的纹素大小为(1/256, 1/512)。
+
+### 两种使用方式对比
+
+从效率上来讲，直接创建Render Texture的效率往往要好于GrabPass，尤其在移动设备上。Render Texture可以自定义渲染纹理的大小，尽管**这种方法需要把部分场景再次渲染一遍**（因为要调用Camera）。
+
+**但我们可以通过调整摄像机的渲染层来减少二次渲染时的场景大小，或使用其他方法来控制摄像机是否需要开启**。
+
+而使用GrabPass获取到的**图像分辨率和显示屏幕是一致的**，这意味着在一些高分辨率的设备上可能会造成严重的带宽影响。
+
+并且GrabPass往往**需要CPU直接读取后备缓冲（back buffer）中的数据，破坏了CPU和GPU之间的并行性**，这是比较耗时的。
+
+**Unity引入了命令缓冲（Command Buffers）来允许我们扩展Unity的渲染流水线**。使用命令缓冲我们也可以得到类似抓屏的效果，它可以在不透明物体渲染后把当前的图像复制到一个临时的渲染目标纹理中，然后在那里进行一些额外的操作，例如模糊等，最后把图像传递给需要使用它的物体进行处理和显示。除此之外，命令缓冲还允许我们实现很多特殊的效果。官方文档： http://docs.unity3d.com/
+Manual/Graphics CommandBuffers.html
+
+### 镜子效果
+在镜子表面上放置一个Camera，创建Render Texture并设置为Target Texture。然后在Shader中使用该Render Texture进行反转处理即可。
+```
+o.uv.x = 1-o.ux.x;
+```
+
+### 模拟折射扭曲效果
+使用GrabPass获取屏幕图像
+```
+GrabPass{"_RefractionTex"}
+```
+首先在顶点着色器中使用ComputeGrabScreenPos计算屏幕空间的坐标
+```
+o.pos = UnityObjectToClipPos(v.vertex);
+o.scrPos = ComputeGrabScreenPos(o.pos);
+```
+使用法线纹理，用切线空间下的法线计算偏移
+```
+float2 offset = tNormal.xy*_Distortion*_RefractionTex_TexelSize.xy;
+i.scrPos.xy += offset;
+```
+然后做透视除法对_RefractionTex（GrabPass得到的Render Texture）进行采样，即得到扭曲后的屏幕图像
+```
+fixed3 refractColor = tex2D(_RefractionTex,i.scrPos.xy/i.scrPos.w).rgb;
+```
+最后用lerp混合即可
+```
+return fixed4(lerp(reflectColor,refractColor,_RefractAmount),1);
+```
+
 ## 程序纹理
