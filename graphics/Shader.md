@@ -1320,3 +1320,50 @@ return fixed4(lerp(reflectColor,refractColor,_RefractAmount),1);
 ```
 
 ## 程序纹理
+程序纹理即通过脚本生成纹理并赋予材质
+
+先在脚本中声明需要使用该纹理的材质
+```
+public Material material = null;
+```
+再声明纹理
+```
+private Texture2D m_generatedTexture = null;
+```
+如果material没有手动赋值则为null，此时尝试通过`renderer.sharedMaterial;`获取该脚本所在的物体上得到相应的材质。在函数_UpdateMaterial中使用material.SetTexture设置纹理。
+```
+void Start () {
+    if (material == null) {
+        Renderer renderer = gameObject.GetComponent<Renderer>();
+        if (renderer == null) {
+            Debug.LogWarning("Cannot find a renderer.");
+            return;
+        }
+        material = renderer.sharedMaterial;
+    }
+    _UpdateMaterial();
+}
+
+private void _UpdateMaterial() {
+    if (material != null) {
+        m_generatedTexture = _GenerateProceduralTexture();
+        material.SetTexture("_MainTex", m_generatedTexture);
+    }
+}
+```
+在函数_GenerateProceduralTexture中：
+
+- 使用`Texture2D proceduralTexture = new Texture2D(textureWidth, textureHeight);`实例化一个纹理
+
+- 使用`proceduralTexture.SetPixel(x, y, pixel);`绘制纹理上的像素，pixel类型是Color
+
+- 使用`proceduralTexture.Apply();`写入像素值，只需在所有像素绘制完成后调用一次
+
+### 程序材质
+在Unity中，有一类专门使用程序纹理的材质，叫做**程序材质（Procedural Materials）**
+
+程序材质和它使用的程序纹理并不是在Unity中创建的，而是使用了一个名为**Substance Designer**的软件在Unity外部生成的。
+
+Substance Designer是一个非常出色的纹理生成工具，很多3A的游戏项目都使用了由它生成的材质。可以从Unity的资源商店或网络中获取到很多免费或付费的Substance材质。**这些材质都是以.sbsar为后缀的**。
+
+当把这些文件导入Unity后，Unity就会生成一个程序纹理资源 （Procedural Material Asset）。**一个程序纹理资源可以包含一个或多个程序材质**。
