@@ -1323,15 +1323,15 @@ return fixed4(lerp(reflectColor,refractColor,_RefractAmount),1);
 程序纹理即通过脚本生成纹理并赋予材质
 
 先在脚本中声明需要使用该纹理的材质
-```C++
+```C#
 public Material material = null;
 ```
 再声明纹理
-```C++
+```C#
 private Texture2D m_generatedTexture = null;
 ```
 如果material没有手动赋值则为null，此时尝试通过`renderer.sharedMaterial;`获取该脚本所在的物体上得到相应的材质。在函数_UpdateMaterial中使用material.SetTexture设置纹理。
-```C++
+```C#
 void Start () {
     if (material == null) {
         Renderer renderer = gameObject.GetComponent<Renderer>();
